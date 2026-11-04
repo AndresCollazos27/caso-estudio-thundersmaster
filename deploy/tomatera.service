@@ -1,0 +1,17 @@
+# Tomatera sin Docker, como servicio de systemd.
+# Copiar a /etc/systemd/system/tomatera.service y ajustar la carpeta y el usuario.
+[Unit]
+Description=Tomatera, app de apoyo del estudio de caso de THUNDERS Master
+After=network.target
+
+[Service]
+Type=simple
+User=tomatera
+WorkingDirectory=/opt/tomatera
+EnvironmentFile=/opt/tomatera/.env
+ExecStart=/usr/bin/node dist/node/server/index.js
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

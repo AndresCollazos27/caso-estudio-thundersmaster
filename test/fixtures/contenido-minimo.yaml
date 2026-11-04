@@ -1,0 +1,121 @@
+caso:
+  nombre: Tomatera
+  empresa: Terraza Viva
+  equipo: Nodo Sur
+fichaTecnica:
+  titulo: Cultivar tomates en maceta
+  url: https://www.verdeesvida.es/huerto_3/cultivar_tomates_en_maceta_34
+consentimiento: Participar es voluntario.
+roles:
+  PO: { nombre: Lucía, etiqueta: PO · Lucía, color: "#B3261E" }
+  SD: { nombre: Paco, etiqueta: SD · Paco, color: "#C2570C" }
+  SD2: { nombre: Carmen, etiqueta: SD · Carmen, color: "#9A4A17" }
+  FR: { nombre: FR, etiqueta: FR, color: "#1E2761" }
+  AN: { nombre: AN, etiqueta: AN, color: "#1E7A3C" }
+  QA: { nombre: QA, etiqueta: QA, color: "#0F766E" }
+  RT: { nombre: RT, etiqueta: RT, color: "#5C6672" }
+cartas:
+  PO: { quienEres: Dueña, vienesAPedir: [Un kit que riegue], dasPorHecho: [Trae bomba] }
+  SD: { quienEres: Asesor, vienesAPedir: [Avisar el tutor], dasPorHecho: [Seco al tacto] }
+  SD2: { quienEres: Clienta, vienesAPedir: [Saber si hay sol], dasPorHecho: [Riega con hojas caídas] }
+  AN: { quienEres: Analista, vienesAPedir: [Entender], dasPorHecho: [Solo avisa] }
+  QA: { quienEres: Calidad, vienesAPedir: [Probar], dasPorHecho: [Un umbral] }
+hojas:
+  FR: { texto: Conduces el ciclo. }
+  RT: { texto: Registras. }
+agenda:
+  - { id: explicacion, nombre: Explicación, minutos: 6, paraTodos: Mira la pantalla. }
+  - { id: lectura, nombre: Lectura, minutos: 3, paraTodos: Lee tu carta. }
+  - { id: medicion_previa, nombre: Medición previa, minutos: 2, paraTodos: Responde solo. }
+  - { id: a4, nombre: Encuentro 1 · A4, minutos: 4, paraTodos: Apertura., porRol: { PO: Escribe tu versión. } }
+  - { id: a51, nombre: Encuentro 1 · A5.1, minutos: 13, paraTodos: Elicitación. }
+  - { id: a52, nombre: Sin el cliente · A5.2, minutos: 7, paraTodos: Especificación. }
+  - { id: a53, nombre: Encuentro 2 · A5.3, minutos: 10, paraTodos: Validación. }
+  - { id: a6, nombre: Cierre · A6, minutos: 6, paraTodos: Cierre. }
+  - { id: medicion_posterior, nombre: Medición posterior, minutos: 2, paraTodos: Responde solo. }
+  - { id: destape, nombre: Destape y debate, minutos: 7, paraTodos: Destape. }
+hitos:
+  - { id: ronda1, tramo: a51, minuto: 3 }
+  - { id: ronda2, tramo: a51, minuto: 8 }
+  - { id: chequeos, tramo: a51, minuto: 12 }
+  - { id: congelar, tramo: a6, minuto: 2 }
+  - { id: confirmar, tramo: a6, minuto: 5 }
+avance: { automatico: true, graciaSegundos: 60 }
+plantillas:
+  canvas:
+    proyecto: Tomatera, ciclo 1
+    objetivo: Tarjetas validadas
+    alcance: Sensor y avisos
+    restricciones: Español de España
+    agenda: Encuentro 1 y 2
+    formato: Historia de usuario
+    insumos: Ficha técnica
+    participacion: Plenaria
+    riesgos: "Mediador: FR"
+    fechaE1: El mismo día
+    fechaE2: El mismo día
+    implicito: Bajo
+    malentendido: Caro
+    extensiones: Paráfrasis por región
+  mapa:
+    - { actor: Lucía Ferrer, rol: PO, aporta: Prioridades, haceLaTarea: Los clientes, decide: Sí, disponibilidad: Los dos encuentros }
+  chequeoSuficiencia: { respuesta: "No", detalle: Falta la clienta }
+  declaracion: { enunciado: No saben cuándo regar., afectados: Clientes, contraste: Equivalente }
+  glosario:
+    - { termino: Guía, definicion: Lo que hay que dejar, critico: Sí, estado: Tentativo }
+    - { termino: Plantel, definicion: Lo que trae el kit, critico: Sí, estado: Tentativo }
+rondas:
+  - numero: 1
+    items:
+      - { id: guia, termino: Guía, tecnica: Paráfrasis cruzada, pregunta: ¿Qué es una guía? }
+  - numero: 2
+    items:
+      - { id: plantel, termino: Plantel, tecnica: Paráfrasis cruzada, pregunta: ¿Qué es un plantel? }
+medicion:
+  - { id: m1, pregunta: ¿Qué es una guía?, tipo: texto }
+  - { id: m2, pregunta: ¿Temperatura de alerta?, tipo: numero }
+  - { id: m3, pregunta: ¿Riega o avisa?, tipo: texto }
+  - { id: m4, pregunta: ¿Mes de trasplante?, tipo: texto }
+cuestionario:
+  afirmaciones: [A1, A2, A3, A4, A5]
+  tlx:
+    - { id: mental, nombre: Exigencia mental, descripcion: d, bajo: Baja, alto: Alta }
+    - { id: fisica, nombre: Exigencia física, descripcion: d, bajo: Baja, alto: Alta }
+    - { id: temporal, nombre: Exigencia temporal, descripcion: d, bajo: Baja, alto: Alta }
+    - { id: rendimiento, nombre: Rendimiento, descripcion: d, bajo: Bueno, alto: Malo }
+    - { id: esfuerzo, nombre: Esfuerzo, descripcion: d, bajo: Bajo, alto: Alto }
+    - { id: frustracion, nombre: Frustración, descripcion: d, bajo: Baja, alto: Alta }
+  abierta: ¿Qué sobró y qué faltó?
+entrevista: [P1, P2, P3]
+destape:
+  - { id: T1, titulo: Riega o avisa, detalle: d }
+  - { id: T2, titulo: Calendario, detalle: d }
+  - { id: T3, titulo: Frío, detalle: d }
+  - { id: T4, titulo: Secar, detalle: d }
+  - { id: T5, titulo: Guía, detalle: d }
+  - { id: T6, titulo: Tutor, detalle: d }
+  - { id: T7, titulo: Plantel, detalle: d }
+  - { id: T8, titulo: Sabor, detalle: d }
+bots:
+  versiones: { PO: Que riegue solo, SD: Que avise, AN: Que avise }
+  medicion:
+    previa:
+      PO: [Tallo, "10", Riega, Marzo]
+      SD: [Tallo, "1", Avisa, Marzo]
+      SD2: [Rama, "5", Avisa, No sé]
+      FR: [No sé, "0", No sé, No sé]
+      AN: [Tutorial, "15", Avisa, Enero]
+      QA: [Guía de cultivo, "8", Avisa, No sé]
+      RT: [No sé, "0", No sé, No sé]
+    posterior: [Tallo principal, "10", Avisa, Depende del hemisferio]
+  rondas:
+    guia: { PO: Tallo, SD: Tallo, SD2: Rama, FR: Tallo, AN: Tutorial, QA: Guía, RT: No sé }
+    plantel: { PO: Planta joven, SD: Planta joven, SD2: Planta, FR: Planta, AN: Grupo, QA: Plantín, RT: Planta }
+  marcas: { guia: Divergencia, plantel: Alineado }
+  necesidades:
+    - { necesidad: Saber cuándo regar, fuente: SD, supuestos: El sensor sabe, prioridad: Alta }
+  tarjetas:
+    - { necesidad: 0, enunciado: Como clienta quiero un aviso de riego, criterioEjemplo: Avisa bajo 30 %, critico: Sí }
+  i2c: { C1: Sí, C2: Sí, C3: Sí }
+  esperado: Que me avise
+  traspaso: { reconstruccion: Avisa cuando está seca, coincide: Sí }

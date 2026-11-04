@@ -1,0 +1,427 @@
+# Contenido del caso Tomatera. Sale de los diseños aprobados:
+#   ../2026-11-02-caso-tomatera-diseno.md y ../2026-11-02-tomatera-software-diseno.md
+# Se puede corregir sin tocar el código. Cada sesión guarda una copia al crearse,
+# así que los cambios solo valen para las sesiones nuevas.
+
+caso:
+  nombre: Tomatera
+  empresa: Terraza Viva, S. L.
+  equipo: Nodo Sur
+
+fichaTecnica:
+  titulo: "Ficha técnica: «Cultivar tomates en maceta» (Verde es Vida)"
+  url: https://www.verdeesvida.es/huerto_3/cultivar_tomates_en_maceta_34
+
+consentimiento: >-
+  Esta actividad es parte del estudio de caso de un trabajo de grado de Ingeniería de Sistemas
+  de la Universidad del Cauca (Colombia) sobre THUNDERS Master, un proceso para construir
+  entendimiento compartido en los requisitos. Participar es voluntario y no afecta tu nota.
+  La app registra lo que escribes y marcas durante la sesión con un identificador anónimo;
+  no se graba audio ni video, y tu apodo no se incluye en los datos que se analizan.
+  Puedes dejar de participar cuando quieras. Al aceptar, autorizas el uso anónimo de tus
+  respuestas con fines académicos.
+
+roles:
+  PO: { nombre: Lucía Ferrer, etiqueta: PO · Lucía, color: "#B3261E" }
+  SD: { nombre: Paco Ruiz, etiqueta: SD · Paco, color: "#C2570C" }
+  SD2: { nombre: Carmen Ortega, etiqueta: SD · Carmen, color: "#9A4A17" }
+  FR: { nombre: Facilitador, etiqueta: FR, color: "#1E2761" }
+  AN: { nombre: Analista, etiqueta: AN, color: "#1E7A3C" }
+  QA: { nombre: Calidad, etiqueta: QA, color: "#0F766E" }
+  RT: { nombre: Relator, etiqueta: RT, color: "#5C6672" }
+
+cartas:
+  PO:
+    quienEres: >-
+      Eres Lucía Ferrer, dueña de Terraza Viva, una pyme de Madrid que vende kits para cultivar
+      tomates en terrazas y balcones. Decides qué entra en Tomatera y qué no, y aceptas los requisitos.
+    vienesAPedir:
+      - Un kit que cuide los tomates solo, para que el cliente no tenga que estar pendiente.
+      - >-
+        Que la app avise cuando una planta tenga más de dos guías, porque hay que dejar una o dos.
+        Las guías son los tallos principales.
+      - Que avise antes de que la noche baje de 10 °C, porque por debajo de 10 °C la planta no crece.
+      - Que el kit produzca mucho, porque lo que vende es la cosecha.
+    dasPorHecho:
+      - >-
+        Tomatera riega sola: el kit trae una bomba pequeña y un depósito de agua. Para ti,
+        «que cuide los tomates solo» quiere decir eso.
+      - >-
+        El año que viene quieres vender Tomatera también en Argentina. Solo lo cuentas si te
+        preguntan por el mercado o por dónde se va a usar la app.
+      - Si para que produzca mucho hay que recomendar híbridos, se recomiendan.
+    comoHablas: Hablas como española. Puedes decir «vale», «el móvil», «el ordenador» o «el piso».
+  SD:
+    quienEres: >-
+      Eres Paco Ruiz, asesor de huerto de Terraza Viva. Conoces las reglas del cultivo por la ficha
+      técnica de la empresa y quieres que Tomatera las respete.
+    vienesAPedir:
+      - Que Tomatera avise cuándo poner el tutor, que es una caña o un palo, y atar los tallos.
+      - >-
+        Que siga el calendario de la ficha: el semillero, protegido, se empieza a finales de enero;
+        los planteles van a la maceta desde marzo si el clima es suave, y desde abril si es frío y
+        van sin protección.
+      - >-
+        Que avise si la temperatura sale de lo óptimo: de 20 a 30 °C de día y de 1 a 17 °C de noche.
+      - >-
+        Que recomiende variedades tradicionales, mejor si son de la zona, porque en casa hay que
+        darle prioridad al sabor.
+    dasPorHecho:
+      - Tomatera se vende con planteles, que son plantas jóvenes de 4 o 5 hojas listas para trasplantar.
+      - >-
+        Con la planta ya establecida hay que dejar secar el sustrato entre riegos. Para ti, seco es
+        cuando la tierra está seca al tacto en la superficie. Recién trasplantada, el riego es clave.
+      - No tiene sentido recomendar híbridos.
+    comoHablas: Hablas como español. Puedes decir «vale», «tío» o «el móvil», y «recolectar» para la cosecha.
+  SD2:
+    quienEres: >-
+      Eres Carmen Ortega, clienta jubilada de Terraza Viva. Cultivas tomates en la terraza de tu piso
+      en Valencia: eres quien hace la tarea todos los días.
+    vienesAPedir:
+      - Saber si tus tomates tienen luz suficiente, porque tu terraza da al norte y le entra poco sol.
+      - Que la app te hable claro, sin palabras técnicas.
+    dasPorHecho:
+      - Para ti la tierra es la tierra y las ramas son ramas; no usas palabras como sustrato, guía o tutor.
+      - Riegas cuando ves las hojas caídas. Es tu costumbre.
+    comoHablas: Hablas como española, despacio y con ejemplos de tu terraza.
+  AN:
+    quienEres: >-
+      Eres analista en Nodo Sur, la empresa de software de La Plata que desarrolla Tomatera.
+      Haces las preguntas y escribes las necesidades y los requisitos.
+    vienesAPedir:
+      - Entender qué tiene que hacer Tomatera en este primer ciclo.
+      - Que cada necesidad quede con su fuente, sus supuestos y su prioridad.
+    dasPorHecho:
+      - El presupuesto que aprobó Nodo Sur cubre el sensor y la app. Tomatera mide y avisa, y la persona riega.
+      - En un sensor de humedad, «seco» es por debajo de 30 %.
+      - En el último proyecto de Nodo Sur, las «guías» eran los tutoriales paso a paso de la app.
+      - Un plantel es un grupo de personas, como el plantel docente o el de un club.
+  QA:
+    quienEres: >-
+      Eres quien construirá y probará Tomatera en Nodo Sur. Necesitas que cada requisito crítico
+      tenga un criterio que se pueda probar.
+    vienesAPedir:
+      - Un solo umbral para probar la alerta de frío, y saber qué pasa justo en el límite.
+      - Ejemplos concretos para cada requisito crítico, del tipo «¿qué pasa si…?».
+    dasPorHecho:
+      - Vas a probar el calendario de avisos y programas los meses tal como los diga el cliente.
+      - Para ti, «seco» es cuando el sensor marca 0 %.
+      - En la app anterior de Nodo Sur, el «tutor» era la persona que acompaña al usuario por chat.
+      - A las plantas jóvenes les dices «plantines».
+
+hojas:
+  FR:
+    texto: >-
+      Conduces el ciclo de tu mesa. En la apertura lees la declaración y marcas si las tres versiones
+      dicen lo mismo. En el encuentro 1 das la palabra por turnos y marcas el resultado de cada ronda.
+      En el encuentro 2 marcas si Paco y el QA entienden igual cada criterio; si hay un conflicto con
+      Lucía, medias tú. Al cierre marcas las evidencias E1 a E5.
+  RT:
+    texto: >-
+      Registras lo que se acuerda. Completas en el registro 06 cada divergencia: quién entiende qué,
+      la resolución, el estado y el responsable. Agregas al glosario los términos nuevos. Al cierre
+      congelas la línea base y anotas las acciones pendientes.
+
+agenda:
+  - id: explicacion
+    nombre: Explicación
+    minutos: 6
+    paraTodos: Mira la pantalla. Leandro cuenta la historia y cómo será la hora.
+    porRol:
+      PO: Escucha a Leandro. Vas a ser Lucía, la dueña de Terraza Viva; en un momento lees tu carta.
+      SD: Escucha a Leandro. Vas a ser Paco, el asesor de huerto de Terraza Viva; en un momento lees tu carta.
+      SD2: Escucha a Leandro. Vas a ser Carmen, la clienta de Terraza Viva que cuida sus tomates todos los días; en un momento lees tu carta.
+      FR: Escucha a Leandro. Vas a conducir la conversación de tu mesa; en un momento lees tu hoja.
+      AN: Escucha a Leandro. Vas a preguntar y escribir los requisitos; en un momento lees tu carta.
+      QA: Escucha a Leandro. Vas a ser quien construirá y probará Tomatera; en un momento lees tu carta.
+      RT: Escucha a Leandro. Vas a registrar lo que se acuerda; en un momento lees tu hoja.
+  - id: lectura
+    nombre: Lectura
+    minutos: 3
+    paraTodos: Lee tu carta en silencio. No la muestres; lo que sabes se cuenta hablando.
+    porRol:
+      PO: Lee tu carta en silencio. No la muestres; lo que sabes se cuenta hablando.
+      SD: Lee tu carta en silencio. No la muestres; lo que sabes se cuenta hablando.
+      SD2: Lee tu carta en silencio. No la muestres; lo que sabes se cuenta hablando.
+      FR: Lee tu hoja. Conduces el ciclo, das la palabra y marcas el resultado de las rondas.
+      AN: Lee tu carta en silencio. No la muestres; lo que sabes se cuenta hablando.
+      QA: Lee tu carta en silencio. No la muestres; lo que sabes se cuenta hablando.
+      RT: Lee tu hoja. Registras las divergencias y cierras la línea base.
+  - id: medicion_previa
+    nombre: Medición previa
+    minutos: 2
+    paraTodos: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+    porRol:
+      PO: Responde sola las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+      SD: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+      SD2: Responde sola las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+      FR: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+      AN: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+      QA: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+      RT: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+  - id: a4
+    nombre: Encuentro 1 · A4
+    minutos: 4
+    paraTodos: Encuentro 1. Cada mesa revisa el problema antes de empezar.
+    porRol:
+      PO: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El FR leerá tu versión en voz alta.
+      SD: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El FR leerá tu versión en voz alta.
+      SD2: Escucha las versiones de Lucía, Paco y el AN. Tú no escribes una; si algo no se parece a lo que pasa en tu terraza, díselo al FR.
+      FR: Lee en voz alta la declaración del problema. Cuando lleguen las versiones de Lucía, Paco y el AN, léelas y marca si dicen lo mismo.
+      AN: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El FR leerá tu versión en voz alta.
+      QA: Escucha las tres versiones y anota las palabras que te suenen ambiguas; te servirán para los ejemplos.
+      RT: Si el FR marca que una versión no dice lo mismo, completa esa divergencia en el registro 06.
+  - id: a51
+    nombre: Encuentro 1 · A5.1
+    minutos: 13
+    paraTodos: Encuentro 1. El AN entrevista al cliente. En los minutos 18 y 23 hay rondas de sondeo.
+    porRol:
+      PO: Cuenta lo que vienes a pedir, que está en tu carta, y responde lo que te pregunten.
+      SD: Cuenta lo que vienes a pedir con las reglas de tu ficha técnica, y responde lo que te pregunten.
+      SD2: Cuenta lo que vienes a pedir, que está en tu carta, con ejemplos de tu terraza, y responde lo que te pregunten.
+      FR: Da la palabra por turnos y cuida que todos hablen. Cuando llegue una ronda, marca el resultado. En el minuto 27, haz los chequeos de cierre.
+      AN: Pregúntales a Lucía y a Paco qué necesitan y qué dan por hecho. Registra cada necesidad con su fuente, sus supuestos y su prioridad.
+      QA: Pregunta «¿cómo sabríamos que esto se cumple?» y anota en el glosario los términos que aparezcan.
+      RT: Agrega al glosario los términos nuevos y completa en 06 las divergencias que aparezcan.
+  - id: a52
+    nombre: Sin el cliente · A5.2
+    minutos: 7
+    paraTodos: Sin el cliente. Lucía y Paco vuelven a Madrid y el equipo escribe los requisitos.
+    porRol:
+      PO: Vuelves a Madrid, así que apártate de la mesa. Para cada necesidad de prioridad alta, escribe qué resultado esperas, con tus palabras.
+      SD: Vuelves a Madrid, así que apártate de la mesa. Para cada necesidad de prioridad alta, escribe qué resultado esperas, con tus palabras.
+      SD2: Vuelves a Valencia, así que apártate de la mesa. Para cada necesidad de prioridad alta, escribe qué resultado esperas, con tus palabras.
+      FR: Ayuda a elegir qué requisitos son críticos y revisa que cada tarjeta tenga criterio y ejemplo.
+      AN: Escribe dos o tres tarjetas críticas, cada una con su necesidad de origen y su criterio.
+      QA: Escribe el ejemplo de cada tarjeta crítica con un caso límite («¿qué pasa si…?») y revisa la parte A de I2.
+      RT: Pasa a 06 las divergencias que siguen pendientes, con responsable.
+  - id: a53
+    nombre: Encuentro 2 · A5.3
+    minutos: 10
+    paraTodos: Encuentro 2. El cliente vuelve y se valida cada requisito crítico con su ejemplo.
+    porRol:
+      PO: Escucha el ejemplo de cada tarjeta crítica y responde si expresa tu necesidad y si el ejemplo te convence.
+      SD: Responde las mismas dos preguntas y, cuando el FR te lo pida, explica el criterio con tus palabras.
+      SD2: Escucha el ejemplo de cada tarjeta crítica y responde si expresa tu necesidad y si el ejemplo te convence.
+      FR: Pide a Paco y al QA que expliquen el criterio y marca si lo entienden igual. Si hay divergencia, guía la resolución; si Lucía es parte, medias tú.
+      AN: Revisa con el QA que no haya requisitos duplicados ni contradicciones (parte B de I2).
+      QA: Lee en voz alta el ejemplo de cada tarjeta crítica y, cuando el FR te lo pida, explica el criterio con tus palabras.
+      RT: Registra en 06 cada resolución y la conformidad del cliente.
+  - id: a6
+    nombre: Cierre · A6
+    minutos: 6
+    paraTodos: Cierre. Se congela la línea base y otra mesa comprueba si se entiende.
+    porRol:
+      PO: Espera la reconstrucción del QA de otra mesa y confirma si entendió tus requisitos críticos.
+      SD: Mira la línea base de tu mesa; es lo que queda acordado.
+      SD2: Mira la línea base de tu mesa; es lo que queda acordado.
+      FR: Marca las evidencias E1 a E5 viendo las lecturas automáticas.
+      AN: Mira la línea base de tu mesa; es lo que queda acordado.
+      QA: Lee la línea base de la mesa siguiente y escribe qué entendiste de sus dos primeros requisitos críticos.
+      RT: Congela la línea base de tu mesa. Después, revisa que las acciones pendientes tengan responsable.
+  - id: medicion_posterior
+    nombre: Medición posterior
+    minutos: 2
+    paraTodos: Responde solo las mismas cuatro preguntas del principio.
+    porRol:
+      PO: Responde sola las mismas cuatro preguntas del principio.
+      SD: Responde solo las mismas cuatro preguntas del principio.
+      SD2: Responde sola las mismas cuatro preguntas del principio.
+      FR: Responde solo las mismas cuatro preguntas del principio.
+      AN: Responde solo las mismas cuatro preguntas del principio.
+      QA: Responde solo las mismas cuatro preguntas del principio.
+      RT: Responde solo las mismas cuatro preguntas del principio.
+  - id: destape
+    nombre: Destape y debate
+    minutos: 7
+    paraTodos: Destape. Leandro muestra las ocho divergencias sembradas. ¿Cuáles encontró tu mesa?
+    porRol:
+      PO: Mira la lista y comenta con tu mesa cuáles encontraron y cómo.
+      SD: Mira la lista y comenta con tu mesa cuáles encontraron y cómo.
+      SD2: Mira la lista y comenta con tu mesa cuáles encontraron y cómo.
+      FR: Marca cuáles de las ocho divergencias registró tu mesa.
+      AN: Mira la lista y comenta con tu mesa cuáles encontraron y cómo.
+      QA: Mira la lista y comenta con tu mesa cuáles encontraron y cómo.
+      RT: Mira la lista y comenta con tu mesa cuáles encontraron y cómo.
+
+hitos:
+  - { id: ronda1, tramo: a51, minuto: 3 }
+  - { id: ronda2, tramo: a51, minuto: 8 }
+  - { id: chequeos, tramo: a51, minuto: 12 }
+  - { id: congelar, tramo: a6, minuto: 2 }
+  - { id: confirmar, tramo: a6, minuto: 5 }
+
+avance:
+  automatico: true
+  graciaSegundos: 60
+
+plantillas:
+  canvas:
+    proyecto: Tomatera, ciclo 1
+    objetivo: Tarjetas validadas de los requisitos críticos del primer ciclo de Tomatera, aprobadas por Lucía
+    alcance: >-
+      Entra el sensor en la maceta y los avisos en la app. Quedan fuera las plagas, las enfermedades
+      y la tienda en línea. Contexto de uso: terrazas y balcones, con la app en el móvil del cliente.
+    restricciones: "Los textos de la app van en el español de España. No negociable; dueña: Lucía."
+    agenda: >-
+      Encuentro 1: apertura (4 min) y un bloque de elicitación por entrevista grupal (13 min).
+      Encuentro 2: validación (10 min) y cierre (6 min).
+    formato: Historia de usuario con criterio y ejemplo
+    insumos: Ficha técnica del asesor, disponible si alguien la pide
+    participacion: Plenaria por turnos. El encuentro 1 cierra cuando cada necesidad crítica tiene fuente.
+    riesgos: "La clienta que hace la tarea no está en todas las mesas. Mediador: el FR."
+    fechaE1: El mismo día de la sesión
+    fechaE2: El mismo día de la sesión, con 0 días entre encuentros
+    implicito: Bajo
+    malentendido: Caro
+    extensiones: "Equipo distribuido: una paráfrasis por región en la apertura"
+  mapa:
+    - actor: Lucía Ferrer, dueña
+      rol: PO
+      aporta: Objetivo del negocio y prioridades
+      haceLaTarea: Los clientes riegan y cuidan las plantas
+      decide: "Sí: alcance y prioridades"
+      disponibilidad: Los dos encuentros
+    - actor: Paco Ruiz, asesor de huerto
+      rol: SD
+      aporta: Reglas de cultivo
+      haceLaTarea: ""
+      decide: "No"
+      disponibilidad: Los dos encuentros
+    - actor: Carmen Ortega, clienta
+      rol: SD
+      aporta: Cómo se cuida la planta en la práctica
+      haceLaTarea: Ella misma
+      decide: "No"
+      disponibilidad: Solo en las mesas de siete
+    - actor: Ficha técnica del asesor
+      rol: Fuente no humana
+      aporta: Las reglas del artículo
+      haceLaTarea: ""
+      decide: ""
+      disponibilidad: A pedido
+    - actor: FR de Nodo Sur
+      rol: FR
+      aporta: Conduce el ciclo
+      haceLaTarea: ""
+      decide: "No"
+      disponibilidad: Los dos encuentros
+    - actor: AN de Nodo Sur
+      rol: AN
+      aporta: Elicita y especifica
+      haceLaTarea: ""
+      decide: "No"
+      disponibilidad: Los dos encuentros
+    - actor: QA de Nodo Sur
+      rol: QA
+      aporta: Construirá y probará
+      haceLaTarea: ""
+      decide: "No"
+      disponibilidad: Los dos encuentros
+    - actor: RT de Nodo Sur
+      rol: RT
+      aporta: Registra y cierra
+      haceLaTarea: ""
+      decide: "No"
+      disponibilidad: Los dos encuentros
+  chequeoSuficiencia:
+    respuesta: "No"
+    detalle: Falta la clienta que hace la tarea en las mesas de seis; queda como acción para el cierre.
+  declaracion:
+    enunciado: >-
+      Quien cultiva tomates en macetas en su terraza no sabe cuándo regar, cuándo entutorar ni cuándo
+      trasplantar, y pierde plantas o cosecha poco.
+    afectados: Los clientes de Terraza Viva y la propia pyme, que recibe quejas y devoluciones.
+    contraste: Paco la reformuló antes del ciclo y su versión es equivalente.
+  glosario:
+    - { termino: Guía, definicion: "Lo que hay que dejar en cada planta: una o dos", critico: Sí, estado: Tentativo }
+    - { termino: Plantel, definicion: Lo que trae el kit para empezar, critico: Sí, estado: Tentativo }
+    - { termino: Tutor, definicion: El apoyo de la planta, critico: "No", estado: Tentativo }
+    - { termino: Sustrato seco, definicion: Cuando toca regar, critico: Sí, estado: Tentativo }
+    - { termino: Temperatura óptima, definicion: La que la planta necesita para crecer bien, critico: Sí, estado: Tentativo }
+
+rondas:
+  - numero: 1
+    items:
+      - { id: guia, termino: Guía, tecnica: Paráfrasis cruzada, pregunta: Explica con tus palabras qué es una guía en Tomatera. }
+      - { id: sustrato, termino: Sustrato seco, tecnica: Sondeo de ambigüedad, pregunta: ¿Con qué humedad avisa Tomatera que hay que regar? Escribe un número o una señal. }
+  - numero: 2
+    items:
+      - { id: temperatura, termino: Temperatura óptima, tecnica: Sondeo de ambigüedad, pregunta: ¿A partir de qué temperatura nocturna avisa Tomatera? Escribe un número. }
+      - { id: plantel, termino: Plantel, tecnica: Paráfrasis cruzada, pregunta: Explica con tus palabras qué es un plantel. }
+
+medicion:
+  - { id: m1, pregunta: "En Tomatera, ¿qué es una guía?", tipo: texto }
+  - { id: m2, pregunta: "¿A partir de qué temperatura nocturna avisa Tomatera? Escribe un número.", tipo: numero }
+  - { id: m3, pregunta: "Cuando la tierra está seca, ¿qué hace Tomatera?", tipo: texto }
+  - { id: m4, pregunta: "¿En qué mes avisa Tomatera que hay que trasplantar?", tipo: texto }
+
+cuestionario:
+  afirmaciones:
+    - El proceso me ayudó a notar que no entendíamos lo mismo
+    - Los pasos que seguimos fueron claros
+    - Aplicarlo exigió un esfuerzo mental alto
+    - Sentí presión por el tiempo
+    - Usaría este proceso en un proyecto real
+  # NASA-TLX sin ponderar (López Núñez, Rubio y Luceño, 2010, EduPsykhé 9(2)), de 0 a 100 de 5 en 5.
+  # Nombres y preguntas adaptados de la versión española de Díaz Ramiro, Rubio, Martín y Luceño
+  # (2010, Revista de Psicología del Trabajo y de las Organizaciones 26(3), doi:10.5093/tr2010v26n3a3).
+  tlx:
+    - { id: mental, nombre: Demanda mental, descripcion: "¿Cuánta actividad mental y perceptiva te exigió la sesión, como pensar, decidir, calcular, recordar o buscar?", bajo: Muy baja, alto: Muy alta }
+    - { id: fisica, nombre: Demanda física, descripcion: "¿Cuánta actividad física te exigió la sesión, como moverte o tocar la pantalla del celular?", bajo: Muy baja, alto: Muy alta }
+    - { id: temporal, nombre: Demanda temporal, descripcion: "¿Cuánta presión de tiempo sentiste, entre el tiempo que necesitabas y el que tenías?", bajo: Muy baja, alto: Muy alta }
+    - { id: rendimiento, nombre: Rendimiento, descripcion: "¿Qué tan satisfactorio te resultó tu rendimiento en la sesión?", bajo: Muy satisfactorio, alto: Nada satisfactorio }
+    - { id: esfuerzo, nombre: Esfuerzo, descripcion: "¿Cuánto esfuerzo mental y físico tuviste que hacer para lograr tu rendimiento?", bajo: Muy bajo, alto: Muy alto }
+    - { id: frustracion, nombre: Nivel de frustración, descripcion: "¿Cuánta inseguridad, estrés, irritación o descontento sentiste durante la sesión?", bajo: Muy bajo, alto: Muy alto }
+  abierta: ¿Qué sobró y qué faltó?
+
+entrevista:
+  - ¿En qué parte del ciclo supieron qué hacer y en cuál se perdieron?
+  - ¿Las rondas de sondeo les mostraron algo que no habrían visto conversando?
+  - ¿Qué cambiarían para usar este proceso en un proyecto real?
+
+destape:
+  - { id: T1, titulo: "¿Riega o avisa?", detalle: "Lucía cree que Tomatera riega sola con una bomba; el AN da por hecho que solo mide y avisa." }
+  - { id: T2, titulo: "Calendario y hemisferio", detalle: "La ficha técnica pone meses de España; Lucía quiere vender en Argentina, donde enero es verano." }
+  - { id: T3, titulo: "Frío de noche", detalle: "La ficha dice que la noche óptima va de 1 a 17 °C y también que bajo 10 °C la planta no crece." }
+  - { id: T4, titulo: "«Dejar secar el sustrato»", detalle: "Para Paco es seco al tacto; para el AN, menos de 30 % en el sensor; para el QA, 0 %." }
+  - { id: T5, titulo: "«Guía»", detalle: "Para Lucía es el tallo principal; para el AN, un tutorial de la app." }
+  - { id: T6, titulo: "«Tutor»", detalle: "Para Paco es una caña o un palo; para el QA, la persona que acompaña al usuario por chat." }
+  - { id: T7, titulo: "«Plantel»", detalle: "Para Paco es una planta joven lista para trasplantar; para el AN, un grupo de personas." }
+  - { id: T8, titulo: "Sabor o rendimiento", detalle: "Paco quiere variedades tradicionales y sabor; Lucía quiere cosecha, aunque sean híbridos." }
+
+# Respuestas de los participantes simulados. Solo se usan en las sesiones de prueba.
+bots:
+  versiones:
+    PO: Que Tomatera riegue sola las tomateras de la terraza. Entran el sensor, la bomba y la app. Espero no tener que estar pendiente.
+    SD: Que la gente sepa cuándo regar y cuándo poner el tutor sin llamarme. Entran el sensor y la app. Espero menos tomateras muertas.
+    AN: Que la app avise cuándo regar y cuándo hacer cada tarea. Entran el sensor y la app. Espero que el cliente riegue a tiempo.
+  medicion:
+    previa:
+      PO: [El tallo principal, "10", Riega sola, Marzo]
+      SD: [Los tallos que se dejan crecer, "1", Avisa, Marzo o abril]
+      SD2: [Una rama, "5", Avisa, No sé]
+      FR: [No sé, "0", Avisa, No sé]
+      AN: [Un tutorial de la app, "15", Avisa, Enero]
+      QA: [Una guía de cultivo, "8", Avisa, No sé]
+      RT: [No sé, "0", No sé, No sé]
+    posterior: [El tallo principal, "10", Avisa y la persona riega, Depende del hemisferio]
+  rondas:
+    guia: { PO: "El tallo principal; hay que dejar uno o dos.", SD: "Los tallos que se dejan crecer.", SD2: "Una rama.", FR: "El tallo, creo.", AN: "Un tutorial de la app, paso a paso.", QA: "Una guía de cultivo para el usuario.", RT: "No sé." }
+    sustrato: { PO: "Cuando la tierra está seca.", SD: "Seco al tacto en la superficie.", SD2: "Cuando las hojas se caen.", FR: "30", AN: "Por debajo de 30 %.", QA: "0 %.", RT: "20" }
+    temperatura: { PO: "10", SD: "1", SD2: "5", FR: "10", AN: "15", QA: "8", RT: "10" }
+    plantel: { PO: "La planta joven del kit.", SD: "Una planta joven de 4 o 5 hojas.", SD2: "La plantita.", FR: "La planta pequeña.", AN: "Un grupo de personas, como un plantel docente.", QA: "Un plantín.", RT: "La planta joven." }
+  marcas: { guia: Divergencia, sustrato: Divergencia, temperatura: Divergencia, plantel: Alineado }
+  necesidades:
+    - { necesidad: Saber cuándo regar sin adivinar, fuente: SD, supuestos: El sensor sabe cuándo la tierra está seca, prioridad: Alta }
+    - { necesidad: Que Tomatera cuide los tomates sola, fuente: PO, supuestos: Riega con una bomba, prioridad: Alta }
+    - { necesidad: Avisar antes del frío de la noche, fuente: PO, supuestos: Bajo 10 °C la planta no crece, prioridad: Alta }
+    - { necesidad: Avisar si hay más de dos guías, fuente: PO, supuestos: "", prioridad: Media }
+    - { necesidad: Recomendar variedades, fuente: SD, supuestos: Tradicionales y sin híbridos, prioridad: Baja }
+  tarjetas:
+    - { necesidad: 0, enunciado: "Como clienta, quiero que Tomatera me avise cuando la tierra esté seca, para regar a tiempo.", criterioEjemplo: "Avisa cuando el sensor marca menos de 30 %. Ejemplo: marca 29 % a las 10 h y avisa; con 30 % no avisa.", critico: Sí }
+    - { necesidad: 2, enunciado: "Como clienta, quiero que Tomatera me avise si de noche baja de 10 °C, para proteger la planta.", criterioEjemplo: "Ejemplo: a las 3 a. m. marca 9,5 °C y avisa. Con 10 °C justos, no avisa.", critico: Sí }
+    - { necesidad: 3, enunciado: "Como clienta, quiero un aviso si una planta tiene más de dos guías.", criterioEjemplo: "Avisa al contar tres tallos principales.", critico: "No" }
+  i2c: { C1: Sí, C2: Sí, C3: Sí }
+  esperado: Que la app me avise a tiempo y yo sepa qué hacer.
+  traspaso: { reconstruccion: Que avise cuando la tierra esté seca o cuando de noche haga menos de 10 grados., coincide: Sí }

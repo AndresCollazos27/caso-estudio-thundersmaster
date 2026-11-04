@@ -1,0 +1,9 @@
+node_modules
+dist
+data
+.env
+.superpowers
+plantilla
+tools
+test
+*.log

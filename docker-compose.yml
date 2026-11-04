@@ -1,0 +1,14 @@
+# Tomatera como proyecto aparte: su propio contenedor, su puerto y su carpeta de datos.
+services:
+  tomatera:
+    build: .
+    image: tomatera:1
+    container_name: tomatera
+    env_file: .env
+    environment:
+      DATA_DIR: /app/data
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { VistaJugador } from '../../shared/vistas.js';
 import { almacenLocal, conPrefijo, crearBorradores } from '../borradores.js';
 import type { Conexion } from '../conexion.js';
@@ -22,12 +22,13 @@ import { Divergencias06, Validacion06 } from '../componentes/Validacion06.js';
 import { Medicion } from '../componentes/Medicion.js';
 import { Necesidades } from '../componentes/Necesidades.js';
 import { Rondas } from '../componentes/Ronda.js';
-import { ayudasVisibles, textoAhora, tiene } from '../textos.js';
+import { ayudasVisibles, etiquetaRol, textoAhora, tiene } from '../textos.js';
 
 type CapaAbierta = 'carta' | 'glosario' | 'ficha' | null;
 
 export function Mesa({ v, con, conectado }: { v: VistaJugador; con: Conexion; conectado: boolean }) {
   const [capa, setCapa] = useState<CapaAbierta>(null);
+  useEffect(() => setCapa(null), [v.sesion.tramo, v.sesion.estado]);
   const borradores = useMemo(() => conPrefijo(crearBorradores(almacenLocal()), `${v.sesion.id}:${v.yo.id}:`), [v.sesion.id, v.yo.id]);
   const enviar = useCallback<Enviar>((tipo, datos) => con.enviar(tipo, datos), [con]);
   const ctx = useMemo(() => ({ v, enviar, borradores }), [v, enviar, borradores]);
@@ -38,7 +39,7 @@ export function Mesa({ v, con, conectado }: { v: VistaJugador; con: Conexion; co
         <BarraMesa v={v} conectado={conectado} desfaseMs={con.desfaseMs()} />
         {v.yo.espectador
           ? <Espectador v={v} />
-          : <main className="cuerpo"><Ahora textos={['Ya estás dentro. Espera a que Leandro arme las mesas; la pantalla dirá cuándo.']} /></main>}
+          : <main className="cuerpo"><section className="espera"><p className="paso">Inscripción completada</p><h1>Ya estás dentro</h1><p>Espera a que el profesor Leandro organice las mesas e indique cuándo comenzar.</p><p className="nota">Tu mesa y tu rol aparecerán aquí automáticamente.</p></section></main>}
       </div>
     );
   }
@@ -47,18 +48,19 @@ export function Mesa({ v, con, conectado }: { v: VistaJugador; con: Conexion; co
   return (
     <Contexto.Provider value={ctx}>
       <div className="cel">
+        <div className="cabecera-actividad">
         <BarraMesa v={v} conectado={conectado} desfaseMs={con.desfaseMs()} />
+        {!conectado && <p className="aviso conexion-aviso" role="status">Sin conexión. Estamos intentando reconectar; tus borradores se conservan.</p>}
+        {ayudas && <nav className="enlaces herramientas" aria-label="Ayudas de la actividad">
+          <button type="button" onClick={() => setCapa('carta')}>{v.carta ? 'Mi carta' : 'Mi hoja'}</button>
+          <button type="button" onClick={() => setCapa('glosario')}>Glosario</button>
+          <button type="button" onClick={() => setCapa('ficha')}>Ficha técnica</button>
+        </nav>}
+        </div>
         <main className="cuerpo">
-          <p className="paso">{v.sesion.estado === 'cerrada' ? 'Cierre de la sesión' : v.sesion.nombreTramo}</p>
+          <div className="fase-actual"><p className="paso">{v.sesion.estado === 'cerrada' ? 'Cierre de la sesión' : v.sesion.tramoIndice !== null ? `Paso ${v.sesion.tramoIndice + 1} de ${v.sesion.agenda.length}` : 'Mesa asignada'}</p><h1>{v.sesion.estado === 'cerrada' ? 'Encuesta final' : v.sesion.tramo ? v.sesion.nombreTramo : 'Esperando el inicio'}</h1></div>
           <Ahora textos={textoAhora(v)} />
           <Tramo />
-          {ayudas && (
-            <nav className="enlaces" aria-label="Más">
-              <button type="button" onClick={() => setCapa('carta')}>{v.carta ? 'Mi carta' : 'Mi hoja'}</button>
-              <button type="button" onClick={() => setCapa('glosario')}>Glosario</button>
-              <button type="button" onClick={() => setCapa('ficha')}>Ficha técnica</button>
-            </nav>
-          )}
         </main>
         {ayudas && capa === 'carta' && <Capa titulo={v.carta ? 'Mi carta' : 'Mi hoja'} onCerrar={() => setCapa(null)}><Carta /></Capa>}
         {ayudas && capa === 'glosario' && <Capa titulo="Glosario (03)" onCerrar={() => setCapa(null)}><Glosario /></Capa>}
@@ -72,6 +74,7 @@ export function Mesa({ v, con, conectado }: { v: VistaJugador; con: Conexion; co
 function Tramo() {
   const { v } = usarMesa();
   if (v.sesion.estado === 'cerrada') return <Cuestionario />;
+  if (v.sesion.tramo === null) return <Lugar />;
   switch (v.sesion.tramo) {
     case 'lectura':
       return <Carta />;
@@ -90,7 +93,7 @@ function Tramo() {
         <>
           <Rondas />
           <Necesidades />
-          {tiene(v, 'QA', 'RT') && (
+          {tiene(v, 'QA', 'RT', 'AN') && (
             <>
               <h3 className="paso">Glosario (03)</h3>
               <Glosario />
@@ -132,6 +135,20 @@ function Tramo() {
     default:
       return null;
   }
+}
+
+// Entre el reparto de roles y el minuto 0: la mesa y el rol en grande, para encontrar el lugar sin preguntar.
+function Lugar() {
+  const { v, m } = usarMesa();
+  return (
+    <section className="lugar" aria-label="Tu lugar">
+      <p className="paso">Tu mesa</p>
+      <p className="mesa-grande">Mesa {m.numero}</p>
+      <p className="paso">Tu rol</p>
+      <p className="rol-grande">{v.yo.roles.map((r) => etiquetaRol(v.roles, r)).join(' y ')}</p>
+      <p className="nota">Siéntate en la mesa con el cartel {m.numero}. Cuando empiece la sesión, este celular te dirá qué hacer en cada paso.</p>
+    </section>
+  );
 }
 
 // Pedirla queda registrado: es uno de los datos del estudio de caso.

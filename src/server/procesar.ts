@@ -246,8 +246,22 @@ export function procesarComando(
       })]);
     case 'marcarDestape':
       return bien([ev('destape.marcado', { divergencia: d.divergencia, registrada: d.registrada })]);
-    case 'responderCuestionario':
-      return bien([ev('cuestionario.respondido', { participante: p.id, afirmaciones: d.afirmaciones, tlx: d.tlx, abierta: d.abierta })]);
+    case 'responderCuestionario': {
+      const configurada = estado.contenido.cuestionario.utilidad;
+      if (configurada) {
+        const ids = configurada.items.map((item) => item.id);
+        const recibidos = Object.keys(d.utilidad?.respuestas ?? {});
+        if (recibidos.length !== ids.length || ids.some((id) => !recibidos.includes(id))) {
+          return falla('Responde todas las afirmaciones de utilidad de esta sesión');
+        }
+      } else if (d.utilidad) {
+        return falla('Esta sesión no incluye preguntas de utilidad');
+      }
+      return bien([ev('cuestionario.respondido', {
+        participante: p.id, afirmaciones: d.afirmaciones, tlx: d.tlx, abierta: d.abierta,
+        ...(d.utilidad ? { utilidad: d.utilidad } : {}),
+      })]);
+    }
     default:
       return falla(NO_PUEDE);
   }

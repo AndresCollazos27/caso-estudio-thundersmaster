@@ -18,6 +18,33 @@ describe('contenido del caso Tomatera', () => {
     expect(() => contenido()).not.toThrow();
   });
 
+  it('versiona la consulta previa y conserva los instrumentos al añadir utilidad', () => {
+    const c = contenido();
+    expect(c.protocolo).toEqual({ version: 2, cartaEnPrevia: true });
+    expect(c.cuestionario.afirmaciones).toHaveLength(5);
+    expect(c.cuestionario.tlx).toHaveLength(6);
+    expect(c.cuestionario.utilidad?.items.map((item) => item.id)).toEqual(['problema', 'terminos', 'diferencias', 'requisitos', 'general']);
+    expect(c.roles.SD2?.etiqueta).toBe('Stakeholder de dominio · Carmen');
+  });
+
+  it('la afirmación general de utilidad pregunta si la mesa llegó a entender lo mismo', () => {
+    const general = contenido().cuestionario.utilidad?.items.find((item) => item.id === 'general');
+    expect(general?.texto).toMatch(/útil/);
+    expect(general?.texto).toMatch(/entend/);
+  });
+
+  it('lo que leen los estudiantes nombra los roles completos, sin siglas', () => {
+    const textos = (x: unknown, ruta: string[] = []): [string, string][] => {
+      if (typeof x === 'string') return [[ruta.join('.'), x]];
+      if (Array.isArray(x)) return x.flatMap((y, i) => textos(y, [...ruta, String(i)]));
+      if (x && typeof x === 'object') return Object.entries(x).flatMap(([k, v]) => textos(v, [...ruta, k]));
+      return [];
+    };
+    const { bots: _bots, ...visible } = contenido();
+    const conSiglas = textos(visible).filter(([r, t]) => !r.endsWith('.rol') && /\b(SD2|PO|SD|FR|AN|QA|RT)\b/.test(t));
+    expect(conSiglas).toEqual([]);
+  });
+
   it('cada divergencia T1 a T8 aparece en al menos dos cartas de PO, SD, AN o QA', () => {
     const c = contenido();
     const pistas: Record<string, [ 'PO' | 'SD' | 'AN' | 'QA', RegExp ][]> = {

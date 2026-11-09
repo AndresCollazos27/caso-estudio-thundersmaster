@@ -19,7 +19,7 @@ const PREGUNTAS_B = {
 const CAMPOS_C = {
   C1: 'C1 · ¿Expresa su necesidad?',
   C2: 'C2 · ¿Confirma ejemplo y criterio?',
-  C3: 'C3 · ¿Interpretan igual SD y QA?',
+  C3: 'C3 · ¿Interpretan igual Paco (stakeholder de dominio) y el responsable de calidad?',
 } as const;
 
 // Parte A (A5.2, QA y AN): se revisa cada tarjeta y solo se anota lo que no cumple.
@@ -41,7 +41,7 @@ export function I2ParteA() {
         return (
           <div key={t.id} className="req">
             <TarjetaLeida t={t} />
-            <Opciones etiqueta={`Revisión de ${t.id}`} valores={REVISION_I2A} valor={fila?.revision} onElegir={(x) => marcar(t.id, x, fila?.nota)} />
+            <Opciones etiqueta={`Revisión de ${t.id}`} valores={REVISION_I2A} valor={fila?.revision} deshabilitado={envio.enviando} onElegir={(x) => marcar(t.id, x, fila?.nota)} />
             {fila && fila.revision !== 'Cumple' && (
               <CampoTexto
                 etiqueta="Ítem que falla y qué corregir" clave={`i2a:${t.id}`} inicial={fila.nota} boton="Guardar la nota" listo="Guardada"
@@ -69,7 +69,7 @@ export function I2ParteB() {
         <div key={campo} className="campo">
           <span className="etq">{campo} · {PREGUNTAS_B[campo]}</span>
           <Opciones
-            etiqueta={campo} valores={SI_NO_PEND} valor={m.i2b[campo]} deshabilitado={!editable}
+            etiqueta={campo} valores={SI_NO_PEND} valor={m.i2b[campo]} deshabilitado={!editable || envio.enviando}
             onElegir={(valor) => envio.correr(() => enviar('marcarI2B', { campo, valor, obs: campo === 'B1' ? m.i2b.obsB1 : m.i2b.obsB2 }), 'Marcado')}
           />
         </div>
@@ -108,7 +108,7 @@ export function I2ParteC() {
               <div key={campo} className="campo">
                 <span className="etq">{CAMPOS_C[campo]}</span>
                 <Opciones
-                  etiqueta={`${campo} de ${id}`} valores={SI_NO_PEND} valor={fila[campo]} deshabilitado={!puedeMarcar || !mios.includes(campo)}
+                  etiqueta={`${campo} de ${id}`} valores={SI_NO_PEND} valor={fila[campo]} deshabilitado={envio.enviando || !puedeMarcar || !mios.includes(campo)}
                   onElegir={(valor) => envio.correr(() => enviar('marcarI2C', { tarjetaId: id, campo, valor }), valor === 'No' ? 'Marcado; se registra en 06' : 'Marcado')}
                 />
               </div>

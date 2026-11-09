@@ -22,7 +22,8 @@ export const PERMISOS: Record<TipoComando, Regla> = {
   escribirVersion: { actores: ['PO', 'SD', 'AN'], tramos: ['a4'], sinSD2: true },
   marcarEquivalencia: { actores: ['FR'], tramos: ['a4'] },
   guardarAjustes: { actores: ['FR'], tramos: ['a4'] },
-  guardarTermino: { actores: ['AN', 'QA', 'RT'], tramos: ['a51', 'a52', 'a53'] },
+  // El glosario (03) es vivo en todo el ciclo: cualquiera de la mesa agrega o corrige una palabra.
+  guardarTermino: { actores: ['participantes'], tramos: DESDE_A4 },
   guardarNecesidad: { actores: ['AN', 'RT'], tramos: ['a51'] },
   responderRonda: { actores: ['participantes'], tramos: ['a51'] },
   marcarRonda: { actores: ['FR'], tramos: ['a51'] },

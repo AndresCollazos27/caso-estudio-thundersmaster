@@ -1,19 +1,30 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { MAX_TEXTO } from '../../shared/valores.js';
+import { textoRoles } from '../../shared/roles.js';
 import { aplicarCambio, guardarCambios, leerCambios } from '../cambios.js';
 import type { Respuesta } from '../conexion.js';
 import { usarMesa } from '../contexto.js';
 
 // Manda un comando y deja el resultado a la vista: «enviando», el error del servidor o un aviso de listo.
 export function usarEnvio() {
+  const pendiente = useRef(false);
   const [estado, setEstado] = useState<{ enviando: boolean; error: string | null; listo: string | null }>({
     enviando: false, error: null, listo: null,
   });
   async function correr(accion: () => Promise<Respuesta>, listo = 'Guardado'): Promise<boolean> {
+    if (pendiente.current) return false;
+    pendiente.current = true;
     setEstado({ enviando: true, error: null, listo: null });
-    const r = await accion();
-    setEstado({ enviando: false, error: r.ok ? null : r.error, listo: r.ok ? listo : null });
-    return r.ok;
+    try {
+      const r = await accion();
+      setEstado({ enviando: false, error: r.ok ? null : textoRoles(r.error), listo: r.ok ? listo : null });
+      return r.ok;
+    } catch {
+      setEstado({ enviando: false, error: 'No se pudo guardar. Tu borrador sigue en este dispositivo; vuelve a intentarlo.', listo: null });
+      return false;
+    } finally {
+      pendiente.current = false;
+    }
   }
   return { ...estado, correr };
 }
@@ -91,13 +102,27 @@ export function AreaTexto(p: { etiqueta: string; valor: string; onCambio: (t: st
 export const excedeTexto = (...textos: string[]) => textos.some((t) => t.length > MAX_TEXTO);
 
 export function Capa(p: { titulo: string; onCerrar: () => void; children: ReactNode }) {
+  const dialogo = useRef<HTMLDialogElement>(null);
+  const tituloId = useId();
+  useEffect(() => {
+    const anterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overflow = document.body.style.overflow;
+    const d = dialogo.current;
+    d?.showModal();
+    document.body.style.overflow = 'hidden';
+    return () => {
+      d?.close();
+      document.body.style.overflow = overflow;
+      anterior?.focus({ preventScroll: true });
+    };
+  }, []);
   return (
-    <div className="capa" role="dialog" aria-modal="true" aria-label={p.titulo}>
+    <dialog ref={dialogo} className="capa" aria-labelledby={tituloId} onCancel={(e) => { e.preventDefault(); p.onCerrar(); }}>
       <div className="capa-cab">
-        <h2>{p.titulo}</h2>
-        <button type="button" className="enlace" onClick={p.onCerrar}>Cerrar</button>
+        <h2 id={tituloId}>{p.titulo}</h2>
+        <button type="button" className="enlace" onClick={p.onCerrar}>Volver a la actividad</button>
       </div>
       {p.children}
-    </div>
+    </dialog>
   );
 }

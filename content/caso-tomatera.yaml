@@ -3,6 +3,10 @@
 # Se puede corregir sin tocar el código. Cada sesión guarda una copia al crearse,
 # así que los cambios solo valen para las sesiones nuevas.
 
+protocolo:
+  version: 2
+  cartaEnPrevia: true
+
 caso:
   nombre: Tomatera
   empresa: Terraza Viva, S. L.
@@ -22,13 +26,13 @@ consentimiento: >-
   respuestas con fines académicos.
 
 roles:
-  PO: { nombre: Lucía Ferrer, etiqueta: PO · Lucía, color: "#B3261E" }
-  SD: { nombre: Paco Ruiz, etiqueta: SD · Paco, color: "#C2570C" }
-  SD2: { nombre: Carmen Ortega, etiqueta: SD · Carmen, color: "#9A4A17" }
-  FR: { nombre: Facilitador, etiqueta: FR, color: "#1E2761" }
-  AN: { nombre: Analista, etiqueta: AN, color: "#1E7A3C" }
-  QA: { nombre: Calidad, etiqueta: QA, color: "#0F766E" }
-  RT: { nombre: Relator, etiqueta: RT, color: "#5C6672" }
+  PO: { nombre: Lucía Ferrer, etiqueta: Responsable de decisión · Lucía, color: "#B3261E" }
+  SD: { nombre: Paco Ruiz, etiqueta: Stakeholder de dominio · Paco, color: "#C2570C" }
+  SD2: { nombre: Carmen Ortega, etiqueta: Stakeholder de dominio · Carmen, color: "#9A4A17" }
+  FR: { nombre: Facilitador de requisitos, etiqueta: Facilitador de requisitos, color: "#1E2761" }
+  AN: { nombre: Analista o especificador, etiqueta: Analista o especificador, color: "#1E7A3C" }
+  QA: { nombre: Responsable de calidad, etiqueta: Responsable de calidad, color: "#0F766E" }
+  RT: { nombre: Relator o gestor de trazabilidad, etiqueta: Relator o gestor de trazabilidad, color: "#5C6672" }
 
 cartas:
   PO:
@@ -114,7 +118,7 @@ hojas:
     texto: >-
       Conduces el ciclo de tu mesa. En la apertura lees la declaración y marcas si las tres versiones
       dicen lo mismo. En el encuentro 1 das la palabra por turnos y marcas el resultado de cada ronda.
-      En el encuentro 2 marcas si Paco y el QA entienden igual cada criterio; si hay un conflicto con
+      En el encuentro 2 marcas si Paco y el responsable de calidad entienden igual cada criterio; si hay un conflicto con
       Lucía, medias tú. Al cierre marcas las evidencias E1 a E5.
   RT:
     texto: >-
@@ -126,15 +130,15 @@ agenda:
   - id: explicacion
     nombre: Explicación
     minutos: 6
-    paraTodos: Mira la pantalla. Leandro cuenta la historia y cómo será la hora.
+    paraTodos: Mira la pantalla. El profesor Leandro cuenta la historia y cómo será la hora.
     porRol:
-      PO: Escucha a Leandro. Vas a ser Lucía, la dueña de Terraza Viva; en un momento lees tu carta.
-      SD: Escucha a Leandro. Vas a ser Paco, el asesor de huerto de Terraza Viva; en un momento lees tu carta.
-      SD2: Escucha a Leandro. Vas a ser Carmen, la clienta de Terraza Viva que cuida sus tomates todos los días; en un momento lees tu carta.
-      FR: Escucha a Leandro. Vas a conducir la conversación de tu mesa; en un momento lees tu hoja.
-      AN: Escucha a Leandro. Vas a preguntar y escribir los requisitos; en un momento lees tu carta.
-      QA: Escucha a Leandro. Vas a ser quien construirá y probará Tomatera; en un momento lees tu carta.
-      RT: Escucha a Leandro. Vas a registrar lo que se acuerda; en un momento lees tu hoja.
+      PO: Escucha al profesor Leandro. Vas a ser Lucía, la dueña de Terraza Viva; en un momento lees tu carta.
+      SD: Escucha al profesor Leandro. Vas a ser Paco, el asesor de huerto de Terraza Viva; en un momento lees tu carta.
+      SD2: Escucha al profesor Leandro. Vas a ser Carmen, la clienta de Terraza Viva que cuida sus tomates todos los días; en un momento lees tu carta.
+      FR: Escucha al profesor Leandro. Vas a conducir la conversación de tu mesa; en un momento lees tu hoja.
+      AN: Escucha al profesor Leandro. Vas a preguntar y escribir los requisitos; en un momento lees tu carta.
+      QA: Escucha al profesor Leandro. Vas a ser quien construirá y probará Tomatera; en un momento lees tu carta.
+      RT: Escucha al profesor Leandro. Vas a registrar lo que se acuerda; en un momento lees tu hoja.
   - id: lectura
     nombre: Lectura
     minutos: 3
@@ -150,31 +154,31 @@ agenda:
   - id: medicion_previa
     nombre: Medición previa
     minutos: 2
-    paraTodos: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+    paraTodos: Responde de forma individual. Puedes consultar tu carta u hoja; si no tienes información suficiente, marca «No lo sé».
     porRol:
-      PO: Responde sola las cuatro preguntas. Nadie verá tus respuestas hasta el final.
-      SD: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
-      SD2: Responde sola las cuatro preguntas. Nadie verá tus respuestas hasta el final.
-      FR: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
-      AN: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
-      QA: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
-      RT: Responde solo las cuatro preguntas. Nadie verá tus respuestas hasta el final.
+      PO: Responde de forma individual. Puedes consultar tu carta u hoja; si no tienes información suficiente, marca «No lo sé».
+      SD: Responde de forma individual. Puedes consultar tu carta u hoja; si no tienes información suficiente, marca «No lo sé».
+      SD2: Responde de forma individual. Puedes consultar tu carta u hoja; si no tienes información suficiente, marca «No lo sé».
+      FR: Responde de forma individual. Puedes consultar tu carta u hoja; si no tienes información suficiente, marca «No lo sé».
+      AN: Responde de forma individual. Puedes consultar tu carta u hoja; si no tienes información suficiente, marca «No lo sé».
+      QA: Responde de forma individual. Puedes consultar tu carta u hoja; si no tienes información suficiente, marca «No lo sé».
+      RT: Responde de forma individual. Puedes consultar tu carta u hoja; si no tienes información suficiente, marca «No lo sé».
   - id: a4
-    nombre: Encuentro 1 · A4
+    nombre: "Encuentro 1: apertura"
     minutos: 4
     paraTodos: Encuentro 1. Cada mesa revisa el problema antes de empezar.
     porRol:
-      PO: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El FR leerá tu versión en voz alta.
-      SD: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El FR leerá tu versión en voz alta.
-      SD2: Escucha las versiones de Lucía, Paco y el AN. Tú no escribes una; si algo no se parece a lo que pasa en tu terraza, díselo al FR.
-      FR: Lee en voz alta la declaración del problema. Cuando lleguen las versiones de Lucía, Paco y el AN, léelas y marca si dicen lo mismo.
-      AN: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El FR leerá tu versión en voz alta.
-      QA: Escucha las tres versiones y anota las palabras que te suenen ambiguas; te servirán para los ejemplos.
-      RT: Si el FR marca que una versión no dice lo mismo, completa esa divergencia en el registro 06.
+      PO: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El facilitador leerá tu versión en voz alta.
+      SD: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El facilitador leerá tu versión en voz alta.
+      SD2: Escucha las versiones de Lucía, Paco y el analista. Tú no escribes una; si algo no se parece a lo que pasa en tu terraza, díselo al facilitador.
+      FR: Lee en voz alta la declaración del problema. Cuando lleguen las versiones de Lucía, Paco y el analista, léelas y marca si dicen lo mismo.
+      AN: Escribe con tus palabras qué problema resuelve Tomatera, qué entra y qué resultado esperas. El facilitador leerá tu versión en voz alta.
+      QA: Escucha las tres versiones. Si una palabra te suena ambigua, agrégala al glosario (botón Glosario, arriba); te servirá para los ejemplos.
+      RT: Si el facilitador marca que una versión no dice lo mismo, completa esa divergencia en el registro 06.
   - id: a51
-    nombre: Encuentro 1 · A5.1
+    nombre: "Encuentro 1: necesidades y rondas"
     minutos: 13
-    paraTodos: Encuentro 1. El AN entrevista al cliente. En los minutos 18 y 23 hay rondas de sondeo.
+    paraTodos: Encuentro 1. El analista entrevista al cliente. En los minutos 18 y 23 hay rondas de sondeo.
     porRol:
       PO: Cuenta lo que vienes a pedir, que está en tu carta, y responde lo que te pregunten.
       SD: Cuenta lo que vienes a pedir con las reglas de tu ficha técnica, y responde lo que te pregunten.
@@ -184,7 +188,7 @@ agenda:
       QA: Pregunta «¿cómo sabríamos que esto se cumple?» y anota en el glosario los términos que aparezcan.
       RT: Agrega al glosario los términos nuevos y completa en 06 las divergencias que aparezcan.
   - id: a52
-    nombre: Sin el cliente · A5.2
+    nombre: Sin el cliente
     minutos: 7
     paraTodos: Sin el cliente. Lucía y Paco vuelven a Madrid y el equipo escribe los requisitos.
     porRol:
@@ -196,23 +200,23 @@ agenda:
       QA: Escribe el ejemplo de cada tarjeta crítica con un caso límite («¿qué pasa si…?») y revisa la parte A de I2.
       RT: Pasa a 06 las divergencias que siguen pendientes, con responsable.
   - id: a53
-    nombre: Encuentro 2 · A5.3
+    nombre: "Encuentro 2: validación"
     minutos: 10
     paraTodos: Encuentro 2. El cliente vuelve y se valida cada requisito crítico con su ejemplo.
     porRol:
       PO: Escucha el ejemplo de cada tarjeta crítica y responde si expresa tu necesidad y si el ejemplo te convence.
-      SD: Responde las mismas dos preguntas y, cuando el FR te lo pida, explica el criterio con tus palabras.
+      SD: Responde las mismas dos preguntas y, cuando el facilitador te lo pida, explica el criterio con tus palabras.
       SD2: Escucha el ejemplo de cada tarjeta crítica y responde si expresa tu necesidad y si el ejemplo te convence.
-      FR: Pide a Paco y al QA que expliquen el criterio y marca si lo entienden igual. Si hay divergencia, guía la resolución; si Lucía es parte, medias tú.
-      AN: Revisa con el QA que no haya requisitos duplicados ni contradicciones (parte B de I2).
-      QA: Lee en voz alta el ejemplo de cada tarjeta crítica y, cuando el FR te lo pida, explica el criterio con tus palabras.
+      FR: Pide a Paco y al responsable de calidad que expliquen el criterio y marca si lo entienden igual. Si hay divergencia, guía la resolución; si Lucía es parte, medias tú.
+      AN: Revisa con el responsable de calidad que no haya requisitos duplicados ni contradicciones (parte B de I2).
+      QA: Lee en voz alta el ejemplo de cada tarjeta crítica y, cuando el facilitador te lo pida, explica el criterio con tus palabras.
       RT: Registra en 06 cada resolución y la conformidad del cliente.
   - id: a6
-    nombre: Cierre · A6
+    nombre: Cierre y traspaso
     minutos: 6
     paraTodos: Cierre. Se congela la línea base y otra mesa comprueba si se entiende.
     porRol:
-      PO: Espera la reconstrucción del QA de otra mesa y confirma si entendió tus requisitos críticos.
+      PO: Espera la reconstrucción del responsable de calidad de otra mesa y confirma si entendió tus requisitos críticos.
       SD: Mira la línea base de tu mesa; es lo que queda acordado.
       SD2: Mira la línea base de tu mesa; es lo que queda acordado.
       FR: Marca las evidencias E1 a E5 viendo las lecturas automáticas.
@@ -222,19 +226,19 @@ agenda:
   - id: medicion_posterior
     nombre: Medición posterior
     minutos: 2
-    paraTodos: Responde solo las mismas cuatro preguntas del principio.
+    paraTodos: Responde de forma individual las mismas cuatro preguntas, sin consultar tu carta u hoja.
     porRol:
-      PO: Responde sola las mismas cuatro preguntas del principio.
-      SD: Responde solo las mismas cuatro preguntas del principio.
-      SD2: Responde sola las mismas cuatro preguntas del principio.
-      FR: Responde solo las mismas cuatro preguntas del principio.
-      AN: Responde solo las mismas cuatro preguntas del principio.
-      QA: Responde solo las mismas cuatro preguntas del principio.
-      RT: Responde solo las mismas cuatro preguntas del principio.
+      PO: Responde de forma individual las mismas cuatro preguntas, sin consultar tu carta u hoja.
+      SD: Responde de forma individual las mismas cuatro preguntas, sin consultar tu carta u hoja.
+      SD2: Responde de forma individual las mismas cuatro preguntas, sin consultar tu carta u hoja.
+      FR: Responde de forma individual las mismas cuatro preguntas, sin consultar tu carta u hoja.
+      AN: Responde de forma individual las mismas cuatro preguntas, sin consultar tu carta u hoja.
+      QA: Responde de forma individual las mismas cuatro preguntas, sin consultar tu carta u hoja.
+      RT: Responde de forma individual las mismas cuatro preguntas, sin consultar tu carta u hoja.
   - id: destape
     nombre: Destape y debate
     minutos: 7
-    paraTodos: Destape. Leandro muestra las ocho divergencias sembradas. ¿Cuáles encontró tu mesa?
+    paraTodos: Destape. El profesor Leandro muestra las ocho divergencias sembradas. ¿Cuáles encontró tu mesa?
     porRol:
       PO: Mira la lista y comenta con tu mesa cuáles encontraron y cómo.
       SD: Mira la lista y comenta con tu mesa cuáles encontraron y cómo.
@@ -269,7 +273,7 @@ plantillas:
     formato: Historia de usuario con criterio y ejemplo
     insumos: Ficha técnica del asesor, disponible si alguien la pide
     participacion: Plenaria por turnos. El encuentro 1 cierra cuando cada necesidad crítica tiene fuente.
-    riesgos: "La clienta que hace la tarea no está en todas las mesas. Mediador: el FR."
+    riesgos: "La clienta que hace la tarea no está en todas las mesas. Mediador: el facilitador."
     fechaE1: El mismo día de la sesión
     fechaE2: El mismo día de la sesión, con 0 días entre encuentros
     implicito: Bajo
@@ -300,25 +304,25 @@ plantillas:
       haceLaTarea: ""
       decide: ""
       disponibilidad: A pedido
-    - actor: FR de Nodo Sur
+    - actor: Facilitador de requisitos de Nodo Sur
       rol: FR
       aporta: Conduce el ciclo
       haceLaTarea: ""
       decide: "No"
       disponibilidad: Los dos encuentros
-    - actor: AN de Nodo Sur
+    - actor: Analista o especificador de Nodo Sur
       rol: AN
       aporta: Elicita y especifica
       haceLaTarea: ""
       decide: "No"
       disponibilidad: Los dos encuentros
-    - actor: QA de Nodo Sur
+    - actor: Responsable de calidad de Nodo Sur
       rol: QA
       aporta: Construirá y probará
       haceLaTarea: ""
       decide: "No"
       disponibilidad: Los dos encuentros
-    - actor: RT de Nodo Sur
+    - actor: Relator o gestor de trazabilidad de Nodo Sur
       rol: RT
       aporta: Registra y cierra
       haceLaTarea: ""
@@ -357,6 +361,14 @@ medicion:
   - { id: m4, pregunta: "¿En qué mes avisa Tomatera que hay que trasplantar?", tipo: texto }
 
 cuestionario:
+  utilidad:
+    items:
+      - { id: problema, texto: El proceso me ayudó a comprender qué problema necesitábamos resolver. }
+      - { id: terminos, texto: El proceso nos ayudó a acordar el significado de los términos importantes. }
+      - { id: diferencias, texto: El proceso nos ayudó a resolver diferencias de interpretación. }
+      - { id: requisitos, texto: "Al finalizar, entendíamos de la misma manera los requisitos críticos." }
+      - { id: general, texto: "En general, el proceso fue útil para que mi mesa llegara a entender lo mismo sobre los requisitos." }
+    abierta: ¿Qué parte del proceso te ayudó más a alcanzar acuerdos? Describe un ejemplo o indica si no te ayudó.
   afirmaciones:
     - El proceso me ayudó a notar que no entendíamos lo mismo
     - Los pasos que seguimos fueron claros
@@ -381,13 +393,13 @@ entrevista:
   - ¿Qué cambiarían para usar este proceso en un proyecto real?
 
 destape:
-  - { id: T1, titulo: "¿Riega o avisa?", detalle: "Lucía cree que Tomatera riega sola con una bomba; el AN da por hecho que solo mide y avisa." }
+  - { id: T1, titulo: "¿Riega o avisa?", detalle: "Lucía cree que Tomatera riega sola con una bomba; el analista da por hecho que solo mide y avisa." }
   - { id: T2, titulo: "Calendario y hemisferio", detalle: "La ficha técnica pone meses de España; Lucía quiere vender en Argentina, donde enero es verano." }
   - { id: T3, titulo: "Frío de noche", detalle: "La ficha dice que la noche óptima va de 1 a 17 °C y también que bajo 10 °C la planta no crece." }
-  - { id: T4, titulo: "«Dejar secar el sustrato»", detalle: "Para Paco es seco al tacto; para el AN, menos de 30 % en el sensor; para el QA, 0 %." }
-  - { id: T5, titulo: "«Guía»", detalle: "Para Lucía es el tallo principal; para el AN, un tutorial de la app." }
-  - { id: T6, titulo: "«Tutor»", detalle: "Para Paco es una caña o un palo; para el QA, la persona que acompaña al usuario por chat." }
-  - { id: T7, titulo: "«Plantel»", detalle: "Para Paco es una planta joven lista para trasplantar; para el AN, un grupo de personas." }
+  - { id: T4, titulo: "«Dejar secar el sustrato»", detalle: "Para Paco es seco al tacto; para el analista, menos de 30 % en el sensor; para el responsable de calidad, 0 %." }
+  - { id: T5, titulo: "«Guía»", detalle: "Para Lucía es el tallo principal; para el analista, un tutorial de la app." }
+  - { id: T6, titulo: "«Tutor»", detalle: "Para Paco es una caña o un palo; para el responsable de calidad, la persona que acompaña al usuario por chat." }
+  - { id: T7, titulo: "«Plantel»", detalle: "Para Paco es una planta joven lista para trasplantar; para el analista, un grupo de personas." }
   - { id: T8, titulo: "Sabor o rendimiento", detalle: "Paco quiere variedades tradicionales y sabor; Lucía quiere cosecha, aunque sean híbridos." }
 
 # Respuestas de los participantes simulados. Solo se usan en las sesiones de prueba.

@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { Tarjeta } from '../../shared/tipos.js';
 import { PRIORIDAD, SI_NO, TIPO_REQUISITO, type Prioridad, type SiNo, type TipoRequisito } from '../../shared/valores.js';
 import { usarMesa } from '../contexto.js';
@@ -10,17 +10,26 @@ export function Tarjetas() {
   const { v, m } = usarMesa();
   const editable = puedo(v, 'guardarTarjeta');
   const [editando, setEditando] = useState<string | null>(null);
+  const [aviso, setAviso] = useState('');
+  const listaId = useId();
+  const volver = (guardado = false) => {
+    const destino = editando ? `${listaId}-${editando}` : listaId;
+    setEditando(null);
+    setAviso(guardado ? 'Tarjeta guardada.' : 'Puedes volver a abrir la tarjeta para continuar tu borrador.');
+    requestAnimationFrame(() => document.getElementById(destino)?.focus());
+  };
   const actual = editando ? m.tarjetas.find((t) => t.id === editando) ?? null : null;
   return (
     <>
-      {editable && <FormTarjeta key={editando ?? 'nueva'} tarjeta={actual} onListo={() => setEditando(null)} />}
+      {aviso && <p className="listo" role="status">{aviso}</p>}
+      {editable && <FormTarjeta key={editando ?? 'nueva'} tarjeta={actual} onListo={volver} />}
       <div className="lista" aria-label="Tarjetas">
-        <h3 className="paso">Tarjetas (05)</h3>
+        <h3 className="paso" id={listaId} tabIndex={-1}>Tarjetas (05)</h3>
         {m.tarjetas.length === 0 && <p className="nota">Todavía no hay tarjetas.</p>}
         {m.tarjetas.map((t) => {
           const cuerpo = <TarjetaLeida t={t} />;
           return editable
-            ? <button key={t.id} type="button" className={`req${editando === t.id ? ' elegido' : ''}`} style={{ textAlign: 'left', border: 0 }} onClick={() => setEditando(t.id)}>{cuerpo}</button>
+            ? <button key={t.id} id={`${listaId}-${t.id}`} type="button" className={`req${editando === t.id ? ' elegido' : ''}`} style={{ textAlign: 'left', border: 0 }} onClick={() => { setAviso(''); setEditando(t.id); }}>{cuerpo}</button>
             : <div key={t.id} className="req">{cuerpo}</div>;
         })}
       </div>
@@ -39,7 +48,9 @@ export function TarjetaLeida({ t }: { t: Tarjeta }) {
   );
 }
 
-function FormTarjeta({ tarjeta, onListo }: { tarjeta: Tarjeta | null; onListo: () => void }) {
+function FormTarjeta({ tarjeta, onListo }: { tarjeta: Tarjeta | null; onListo: (guardado?: boolean) => void }) {
+  const titulo = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { if (tarjeta) titulo.current?.focus(); }, [tarjeta?.id]);
   const { m, enviar } = usarMesa();
   const envio = usarEnvio();
   const idNecesidad = useId();
@@ -58,12 +69,13 @@ function FormTarjeta({ tarjeta, onListo }: { tarjeta: Tarjeta | null; onListo: (
     if (datos.enunciado !== undefined) datos.enunciado = datos.enunciado.trim();
     if (await envio.correr(() => enviar('guardarTarjeta', datos), `Guardada ${tarjeta?.id ?? siguiente}`)) {
       f.limpiar();
-      onListo();
+      onListo(true);
     }
   }
   return (
-    <div className="papel">
-      <h2>{tarjeta ? `Editar ${tarjeta.id}` : 'Nueva tarjeta'}</h2>
+    <fieldset className="papel formulario-bloqueable" disabled={envio.enviando}>
+      <h2 ref={titulo} tabIndex={-1}>{tarjeta ? `Editar ${tarjeta.id}` : 'Nueva tarjeta'}</h2>
+      {f.hayCambios && <p className="nota borrador">Borrador guardado en este dispositivo; todavía no se ha enviado.</p>}
       <div className="campo">
         <label className="etq" htmlFor={idNecesidad}>Necesidad de origen (04)</label>
         <select id={idNecesidad} value={d.necesidadId} onChange={(e) => f.poner('necesidadId', e.target.value)}>
@@ -81,12 +93,13 @@ function FormTarjeta({ tarjeta, onListo }: { tarjeta: Tarjeta | null; onListo: (
       <div className="campo"><span className="etq">Prioridad</span><Opciones etiqueta="Prioridad" valores={PRIORIDAD} valor={d.prioridad} onElegir={(x) => f.poner('prioridad', x)} /></div>
       {d.tipo === 'Restricción' && <AreaTexto etiqueta="Restricción: ¿negociable? y dueño" corto valor={d.restriccion} onCambio={(t) => f.poner('restriccion', t)} />}
       <div className="fila">
-        {tarjeta && <button type="button" className="btn sec" onClick={() => { f.limpiar(); onListo(); }}>Cancelar</button>}
+        {tarjeta && <button type="button" className="btn sec" onClick={() => onListo()}>Volver</button>}
+        {f.hayCambios && <button type="button" className="enlace" onClick={() => { f.limpiar(); onListo(); }}>Descartar cambios</button>}
         <button type="button" className="btn" disabled={envio.enviando || !d.necesidadId || !d.enunciado.trim() || (tarjeta !== null && !f.hayCambios) || excedeTexto(d.enunciado, d.criterioEjemplo, d.restriccion)} onClick={guardar}>
           Guardar {tarjeta?.id ?? siguiente}
         </button>
       </div>
       <Mensajes error={envio.error} listo={envio.listo} />
-    </div>
+    </fieldset>
   );
 }

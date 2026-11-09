@@ -6,6 +6,30 @@ const json = (x: unknown) => JSON.stringify(x);
 const URL_PUBLICA = 'http://203.0.113.24:8090';
 
 describe('vistaJugador', () => {
+  it('solo la previa del protocolo nuevo permite recibir y consultar la carta propia', () => {
+    const c = contenidoReal();
+    const e = new Escenario(6, c);
+    e.irA('medicion_previa');
+    const p = e.quien('PO');
+    const previa = vistaJugador(e.estado, p, T0);
+    expect(previa.medicion?.permiteCarta).toBe(true);
+    expect(previa.carta).toEqual(c.cartas.PO);
+    expect(json(previa)).not.toContain(c.cartas.QA.quienEres);
+    e.irA('medicion_posterior');
+    expect(vistaJugador(e.estado, p, T0).medicion?.permiteCarta).toBe(false);
+    expect(vistaJugador(e.estado, p, T0).carta).toBeNull();
+    expect(vistaJugador(e.estado, e.quien('FR'), T0).hojas).toEqual([]);
+  });
+
+  it('las sesiones antiguas conservan su medición previa sin carta', () => {
+    const c = contenidoReal();
+    delete c.protocolo;
+    const e = new Escenario(6, c);
+    e.irA('medicion_previa');
+    const v = vistaJugador(e.estado, e.quien('PO'), T0);
+    expect(v.medicion?.permiteCarta).toBe(false);
+    expect(v.carta).toBeNull();
+  });
   it('el QA no recibe la carta del PO y el PO sí la suya', () => {
     const e = new Escenario(6, contenidoReal());
     e.irA('lectura');
@@ -106,6 +130,21 @@ describe('vistaJugador', () => {
 });
 
 describe('vistaLeandro y vistaAutores', () => {
+  it('proyecta conteos de medición y cuestionario sin revelar respuestas', () => {
+    const e = new Escenario(6, contenidoReal());
+    e.irA('medicion_previa');
+    const p = e.quien('AN');
+    e.ok(p, 'responderMedicion', { fase: 'previa', respuestas: ['secreto-uno', '10', 'secreto-dos', 'Marzo'] });
+    const pre = vistaLeandro(e.estado, T0, URL_PUBLICA);
+    expect(pre.mesas[0].medicion).toEqual({ respondieron: 1, total: 6 });
+    expect(json(pre)).not.toContain('secreto-uno');
+    e.aplicar({ en: T0, tipo: 'sesion.cerrada', por: { tipo: 'sistema' }, datos: {} });
+    e.estado.cuestionario[p] = { afirmaciones: [1, 2, 3, 4, 5], tlx: [50, 50, 50, 50, 50, 50], abierta: 'privado' };
+    const cierre = vistaLeandro(e.estado, T0, URL_PUBLICA);
+    expect(cierre.mesas[0].cuestionario).toEqual({ respondieron: 1, total: 6 });
+    expect(cierre.cuestionario).toEqual({ afirmaciones: 5, utilidad: 5, tlx: 6, comentarios: 2 });
+    expect(json(cierre)).not.toContain('privado');
+  });
   it('Leandro no recibe cartas ni respuestas', () => {
     const e = new Escenario(6, contenidoReal());
     e.irA('a51');

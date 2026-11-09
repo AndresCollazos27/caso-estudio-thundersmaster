@@ -1,4 +1,5 @@
 import { usarMesa } from '../contexto.js';
+import { textoRoles } from '../../shared/roles.js';
 import { puedo } from '../textos.js';
 import { Mensajes, Opciones, usarEnvio } from './comunes.js';
 
@@ -15,13 +16,13 @@ export function Destape() {
         return (
           <div key={t.id} className="req">
             <span className="id">{t.id}</span>
-            <b>{t.titulo}</b>
-            <p className="nota">{t.detalle}</p>
+            <b>{textoRoles(t.titulo)}</b>
+            <p className="nota">{textoRoles(t.detalle)}</p>
             {editable
               ? (
                 <Opciones
                   etiqueta={`¿Tu mesa registró ${t.id}?`} valores={['Sí', 'No'] as const} valor={marca === undefined ? undefined : marca ? 'Sí' : 'No'}
-                  nombres={{ Sí: 'La registramos', No: 'No la registramos' }}
+                  nombres={{ Sí: 'La registramos', No: 'No la registramos' }} deshabilitado={envio.enviando}
                   onElegir={(x) => envio.correr(() => enviar('marcarDestape', { divergencia: t.id, registrada: x === 'Sí' }), 'Marcado')}
                 />
               )

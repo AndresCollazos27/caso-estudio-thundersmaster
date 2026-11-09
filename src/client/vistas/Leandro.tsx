@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TipoComando } from '../../shared/comandos.js';
+import { textoRoles } from '../../shared/roles.js';
 import { formatoReloj } from '../../shared/tiempo.js';
 import type { ResumenMesa, VistaLeandro } from '../../shared/vistas.js';
 import { restanteAhora, type Conexion } from '../conexion.js';
@@ -20,7 +21,7 @@ export function Leandro() {
     const texto = estado.error === 'Clave incorrecta' ? 'La clave del enlace no es correcta.' : estado.error ?? 'Conectando…';
     return <Aviso texto={texto} />;
   }
-  return <Proyeccion v={v} con={con} conectado={estado.conectado} />;
+  return <Proyeccion key={v.sesion.id} v={v} con={con} conectado={estado.conectado} />;
 }
 
 function Aviso({ texto }: { texto: string }) {
@@ -36,6 +37,14 @@ function Proyeccion({ v, con, conectado }: { v: VistaLeandro; con: Conexion; con
   const ahora = usarTic(250);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [listo, setListo] = useState<string | null>(null);
+  const pendiente = useRef(false);
+  // En el proyector, el aviso de que el cambio llegó se borra solo: la pantalla ya muestra el tramo nuevo.
+  useEffect(() => {
+    if (!listo) return;
+    const t = setTimeout(() => setListo(null), 3000);
+    return () => clearTimeout(t);
+  }, [listo]);
   // Tras «Siguiente tramo», el botón espera a que llegue el tramo nuevo: un segundo clic no salta otro tramo.
   const [esperandoDesde, setEsperandoDesde] = useState<number | null | undefined>(undefined);
   const s = v.sesion;
@@ -43,18 +52,31 @@ function Proyeccion({ v, con, conectado }: { v: VistaLeandro; con: Conexion; con
   const restante = restanteAhora(s.restanteMs, s.ahoraServidor, s.pausada, con.desfaseMs(), ahora);
   const minuto = minutoActual(s, restante);
   async function hacer(tipo: TipoComando, datos: unknown = {}): Promise<boolean> {
+    if (!conectado || pendiente.current) return false;
+    pendiente.current = true;
     setEnviando(true);
-    const r = await con.enviar(tipo, datos);
-    setEnviando(false);
-    setError(r.ok ? null : r.error);
-    return r.ok;
+    setError(null);
+    setListo(null);
+    try {
+      const r = await con.enviar(tipo, datos);
+      if (r.ok) setListo(tipo === 'pausar' ? 'Sesión pausada' : tipo === 'reanudar' ? 'Sesión reanudada' : tipo === 'lanzarRonda' ? 'Ronda lanzada' : tipo === 'cerrarInscripcion' ? 'Roles repartidos. Ya pueden buscar su mesa.' : 'Tramo actualizado');
+      else setError(r.error);
+      return r.ok;
+    } catch {
+      setError('No se pudo enviar el cambio. Inténtalo de nuevo.');
+      return false;
+    } finally {
+      pendiente.current = false;
+      setEnviando(false);
+    }
   }
   async function avanzar() {
     if (s.tramoIndice === s.agenda.length - 1 && !window.confirm('¿Terminar la sesión? Después no se puede volver atrás.')) return;
     setEsperandoDesde(s.tramoIndice);
     if (!(await hacer('avanzarTramo', { desde: s.tramoIndice }))) setEsperandoDesde(undefined);
   }
-  const avanzando = enviando || esperandoDesde !== undefined;
+  const bloqueado = enviando || !conectado;
+  const avanzando = bloqueado || esperandoDesde !== undefined;
   const abierta = s.tramo === 'a51' ? v.mesas.find((m) => m.ronda && !m.ronda.revelada)?.ronda ?? null : null;
   const rondaAbierta = abierta?.numero ?? null;
   // Durante una ronda, la cuenta de 60 segundos reemplaza al cronómetro del tramo.
@@ -62,9 +84,9 @@ function Proyeccion({ v, con, conectado }: { v: VistaLeandro; con: Conexion; con
   const proximaRonda = s.tramo === 'a51' ? ([1, 2] as const).find((n) => !v.rondasLanzadas.includes(n)) : undefined;
 
   let cuerpo;
-  if (!s.inscripcionCerrada) cuerpo = <Inscripcion v={v} hacer={hacer} enviando={enviando} />;
+  if (!s.inscripcionCerrada) cuerpo = <Inscripcion v={v} hacer={hacer} enviando={bloqueado} />;
   else if (s.tramoIndice === null) cuerpo = <Listos v={v} avanzar={avanzar} enviando={avanzando} />;
-  else if (s.estado === 'cerrada') cuerpo = <Cierre />;
+  else if (s.estado === 'cerrada') cuerpo = <Cierre v={v} />;
   else if (s.tramo === 'destape' && v.destape) {
     cuerpo = (
       <>
@@ -73,9 +95,9 @@ function Proyeccion({ v, con, conectado }: { v: VistaLeandro; con: Conexion; con
           <p className="p-suave p-mono">minuto {Math.floor(minuto)} de 60 · {s.pausada ? 'en pausa' : formatoReloj(Math.max(0, restante))}</p>
         </div>
         <p className="p-grande">¿Cuáles encontró tu mesa?</p>
-        <div className="p-lista">{v.destape.map((t) => <div key={t.id}><b>{t.id} · {t.titulo}</b><p>{t.detalle}</p></div>)}</div>
+        <div className="p-lista">{v.destape.map((t) => <div key={t.id}><b>{t.id} · {textoRoles(t.titulo)}</b><p>{textoRoles(t.detalle)}</p></div>)}</div>
         <div className="p-controles">
-          <button type="button" className="p-btn fantasma" disabled={enviando} onClick={() => hacer(s.pausada ? 'reanudar' : 'pausar')}>{s.pausada ? 'Reanudar' : 'Pausar'}</button>
+          <button type="button" className="p-btn fantasma" disabled={bloqueado} onClick={() => hacer(s.pausada ? 'reanudar' : 'pausar')}>{s.pausada ? 'Reanudar' : 'Pausar'}</button>
           <button type="button" className="p-btn fantasma" disabled={avanzando} onClick={avanzar}>Terminar la sesión</button>
         </div>
       </>
@@ -92,15 +114,15 @@ function Proyeccion({ v, con, conectado }: { v: VistaLeandro; con: Conexion; con
           {s.pausada ? 'En pausa' : formatoReloj(cuenta ?? Math.max(0, restante))}
         </p>
         {restante < 0 && !s.pausada && cuenta === null && <p className="p-aviso">Tiempo: pasa al siguiente tramo (+{formatoReloj(-restante)})</p>}
-        <p className="p-texto">{rondaAbierta ? 'Las preguntas están en el celular. Cuando responda toda la mesa, verán las respuestas juntas.' : v.paraTodos}</p>
+        <p className="p-texto">{rondaAbierta ? 'Las preguntas están en el celular. Cuando responda toda la mesa, verán las respuestas juntas.' : textoRoles(v.paraTodos)}</p>
         <LineaDeTiempo s={s} minuto={minuto} />
         <div className="p-chips">{v.mesas.map((m) => <p key={m.numero} className="p-chip"><b>Mesa {m.numero}</b>{avance(m, s.tramo, rondaAbierta)}</p>)}</div>
         <div className="p-controles">
           {proximaRonda && !rondaAbierta && (
-            <button type="button" className="p-btn" disabled={enviando} onClick={() => hacer('lanzarRonda', { numero: proximaRonda })}>Lanzar ronda {proximaRonda}</button>
+            <button type="button" className="p-btn" disabled={bloqueado} onClick={() => hacer('lanzarRonda', { numero: proximaRonda })}>Lanzar ronda {proximaRonda}</button>
           )}
-          <button type="button" className="p-btn fantasma" disabled={enviando} onClick={() => hacer(s.pausada ? 'reanudar' : 'pausar')}>{s.pausada ? 'Reanudar' : 'Pausar'}</button>
-          <button type="button" className="p-btn fantasma" disabled={avanzando} onClick={avanzar}>
+          <button type="button" className="p-btn fantasma" disabled={bloqueado} onClick={() => hacer(s.pausada ? 'reanudar' : 'pausar')}>{s.pausada ? 'Reanudar' : 'Pausar'}</button>
+          <button type="button" className="p-btn fantasma" disabled={bloqueado || avanzando} onClick={avanzar}>
             {s.tramoIndice === s.agenda.length - 1 ? 'Terminar la sesión' : 'Siguiente tramo'}
           </button>
         </div>
@@ -110,6 +132,8 @@ function Proyeccion({ v, con, conectado }: { v: VistaLeandro; con: Conexion; con
   return (
     <main className="proy">
       {cuerpo}
+      {enviando && <p className="p-suave" role="status">Enviando cambio…</p>}
+      {listo && <p className="p-suave" role="status">{listo}</p>}
       {error && <p className="p-aviso" role="alert">{error}</p>}
       {!conectado && <p className="p-aviso" role="status">Sin conexión con el servidor; reconectando…</p>}
     </main>
@@ -120,6 +144,8 @@ function Proyeccion({ v, con, conectado }: { v: VistaLeandro; con: Conexion; con
 function avance(m: ResumenMesa, tramo: string | null, ronda: number | null): string {
   if (ronda && m.ronda && m.ronda.numero === ronda) return m.ronda.revelada ? 'Respuestas a la vista' : `${m.ronda.respondieron} de ${m.ronda.total} respondieron`;
   switch (tramo) {
+    case 'medicion_previa':
+    case 'medicion_posterior': return m.medicion ? `${m.medicion.respondieron} de ${m.medicion.total} enviaron sus respuestas` : `${m.conectados} de ${m.personas} conectados`;
     case 'a4': return `${m.divergencias} divergencia${m.divergencias === 1 ? '' : 's'}`;
     case 'a51': return `${m.necesidades} necesidades · ${m.terminos} términos`;
     case 'a52': return `${m.tarjetas} tarjetas`;
@@ -152,6 +178,7 @@ function Inscripcion({ v, hacer, enviando }: { v: VistaLeandro; hacer: Hacer; en
           <div className="p-controles">
             <button type="button" className="p-btn" disabled={enviando || v.inscritos < 5} onClick={() => hacer('cerrarInscripcion')}>Cerrar inscripción y repartir roles</button>
           </div>
+          {v.inscritos < 5 && <p className="p-suave">Se necesitan al menos cinco participantes para formar una mesa.</p>}
         </div>
       </div>
     </>
@@ -173,7 +200,7 @@ function Listos({ v, avanzar, enviando }: { v: VistaLeandro; avanzar: () => void
         </div>
         <div className="p-mesas">
           <p className="p-grande">Busquen su mesa</p>
-          <p className="p-texto">{v.paraTodos}</p>
+          <p className="p-texto">{textoRoles(v.paraTodos)}</p>
           {v.mesas.map((m) => <FilaMesa key={m.numero} m={m} />)}
           <div className="p-controles">
             <button type="button" className="p-btn" disabled={enviando} onClick={avanzar}>Empezar la sesión</button>
@@ -196,13 +223,15 @@ function FilaMesa({ m }: { m: ResumenMesa }) {
   );
 }
 
-function Cierre() {
+function Cierre({ v }: { v: VistaLeandro }) {
+  const q = v.cuestionario ?? { afirmaciones: 5, utilidad: 0, tlx: 6, comentarios: 1 };
   return (
     <>
       <p className="p-marca">Tomatera</p>
       <p className="p-grande">Gracias por participar</p>
-      <p className="p-texto">Respondan el cuestionario en su celular antes de irse. Son cinco afirmaciones, seis barras y una pregunta abierta.</p>
-      <p className="p-suave">Leandro: las notas de la entrevista con los FR van en la pestaña «entrevista», que no se proyecta.</p>
+      <p className="p-texto">Respondan el cuestionario en su celular antes de irse. Son {q.afirmaciones + q.utilidad} afirmaciones, {q.tlx} escalas y {q.comentarios === 1 ? 'un comentario' : `${q.comentarios} comentarios`}.</p>
+      <div className="p-chips">{v.mesas.map((m) => <p key={m.numero} className="p-chip"><b>Mesa {m.numero}</b>{m.cuestionario ? `${m.cuestionario.respondieron} de ${m.cuestionario.total} completaron la encuesta` : `${m.conectados} de ${m.personas} conectados`}</p>)}</div>
+      <p className="p-suave">Profesor Leandro: las notas de la entrevista con los facilitadores van en la pestaña «entrevista», que no se proyecta.</p>
     </>
   );
 }

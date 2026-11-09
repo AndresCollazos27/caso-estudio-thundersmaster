@@ -85,7 +85,8 @@ function FormDivergencia({ divergencia, onListo }: { divergencia: Divergencia | 
         </>
       )}
       <div className="fila">
-        <button type="button" className="btn sec" onClick={() => { f.limpiar(); onListo(); }}>Volver</button>
+        <button type="button" className="btn sec" onClick={onListo}>Volver</button>
+        {f.hayCambios && <button type="button" className="enlace" onClick={() => { f.limpiar(); onListo(); }}>Descartar cambios</button>}
         <button type="button" className="btn" disabled={envio.enviando || !d.descripcion.trim() || (divergencia !== null && !f.hayCambios) || excedeTexto(...Object.values(d).map(String))} onClick={guardar}>Guardar</button>
       </div>
       <Mensajes error={envio.error} />

@@ -81,6 +81,10 @@ function candidatas(v: VistaJugador, bots: Bots, k: (clave: string) => number): 
         afirmaciones: [0, 1, 2, 3, 4].map((i) => 2 + Math.floor(k(`afirmacion:${i}`) * 4)),
         tlx: [0, 1, 2, 3, 4, 5].map((i) => 5 * Math.floor(k(`tlx:${i}`) * 21)),
         abierta: '',
+        ...(v.cuestionario.preguntas.utilidad ? { utilidad: {
+          respuestas: Object.fromEntries(v.cuestionario.preguntas.utilidad.items.map((item) => [item.id, 2 + Math.floor(k(`utilidad:${item.id}`) * 4)])),
+          abierta: '',
+        } } : {}),
       }));
     }
     return a;

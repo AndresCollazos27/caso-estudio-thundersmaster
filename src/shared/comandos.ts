@@ -61,6 +61,7 @@ export const esquemasComando = {
     afirmaciones: z.array(z.number().int().min(1).max(5)).length(5),
     tlx: z.array(z.number().int().min(0).max(100).multipleOf(5)).length(6),
     abierta: texto,
+    utilidad: obj({ respuestas: z.record(z.number().int().min(1).max(5)), abierta: texto }).optional(),
   }),
   cerrarInscripcion: vacio,
   // `desde` es el tramo que veía quien apretó el botón: si ya cambió, el comando se rechaza.

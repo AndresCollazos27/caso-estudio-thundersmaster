@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { Contenido } from '../../shared/contenido.js';
+import { nombreRol, textoRoles } from '../../shared/roles.js';
 import { Qr } from '../componentes/Qr.js';
 
 interface Datos {
@@ -20,23 +21,35 @@ export function Imprimir() {
   const parte = window.location.pathname.replace(/^\/imprimir\/?/, '').replace(/\/+$/, '') || 'cartas';
   const [datos, setDatos] = useState<Datos | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [intento, setIntento] = useState(0);
   const sufijo = `?k=${encodeURIComponent(k)}${s ? `&s=${encodeURIComponent(s)}` : ''}`;
   useEffect(() => {
-    fetch(`/api/autores/contenido${sufijo}`)
+    const controlador = new AbortController();
+    setDatos(null);
+    setError(null);
+    fetch(`/api/autores/contenido${sufijo}`, { signal: controlador.signal })
       .then(async (r) => {
         const x = await r.json();
         if (r.ok) setDatos(x);
         else setError(x.error ?? 'No se pudo leer el contenido');
       })
-      .catch(() => setError('No se pudo conectar con el servidor'));
-  }, [sufijo]);
+      .catch((e: unknown) => { if (!(e instanceof DOMException && e.name === 'AbortError')) setError('No se pudo conectar con el servidor. Revisa la conexión e inténtalo de nuevo.'); });
+    return () => controlador.abort();
+  }, [sufijo, intento]);
+  const parteValida = PARTES.some(([p]) => p === parte);
   return (
     <div className="impr">
+      <header className="noimp impresion-cabecera">
+        <a href={`/autores${sufijo}`}>← Volver a autores</a>
+        <h1>Materiales para imprimir</h1>
+        <p className="nota">{datos?.sesion ? `Tomatera · Sesión ${datos.sesion.codigo}` : 'Tomatera'}. Elige una parte y revisa la vista previa antes de imprimir.</p>
+      </header>
       <nav className="noimp" aria-label="Partes">
         {PARTES.map(([p, nombre]) => <a key={p} href={`/imprimir/${p}${sufijo}`} aria-current={p === parte ? 'page' : undefined}>{nombre}</a>)}
-        <button type="button" onClick={() => window.print()}>Imprimir esta parte</button>
+        <button type="button" className="btn" disabled={!datos || Boolean(error) || !parteValida} onClick={() => window.print()}>Imprimir esta parte</button>
       </nav>
-      {error && <p className="error">{error}</p>}
+      {!datos && !error && <p className="nota" role="status">Preparando los materiales…</p>}
+      {error && <div className="noimp"><p className="error" role="alert">{error}</p><button type="button" className="btn sec" onClick={() => setIntento((n) => n + 1)}>Volver a intentar</button></div>}
       {datos && <Parte parte={parte} d={datos} />}
     </div>
   );
@@ -61,8 +74,8 @@ const id = (prefijo: string, n: number) => `${prefijo}-${String(n).padStart(2, '
 function Pagina({ titulo, subtitulo, children }: { titulo: string; subtitulo?: string; children: ReactNode }) {
   return (
     <section className="pagina">
-      <h1>{titulo}</h1>
-      {subtitulo && <p>{subtitulo}</p>}
+      <h1>{textoRoles(titulo)}</h1>
+      {subtitulo && <p>{textoRoles(subtitulo)}</p>}
       {children}
     </section>
   );
@@ -72,8 +85,8 @@ function Pagina({ titulo, subtitulo, children }: { titulo: string; subtitulo?: s
 function Tabla({ columnas, filas }: { columnas: string[]; filas: ReactNode[][] }) {
   return (
     <table className="rellenar">
-      <thead><tr>{columnas.map((x) => <th key={x}>{x}</th>)}</tr></thead>
-      <tbody>{filas.map((f, i) => <tr key={i}>{f.map((x, j) => <td key={j}>{x}</td>)}</tr>)}</tbody>
+      <thead><tr>{columnas.map((x) => <th key={x}>{textoRoles(x)}</th>)}</tr></thead>
+      <tbody>{filas.map((f, i) => <tr key={i}>{f.map((x, j) => <td key={j}>{typeof x === 'string' ? textoRoles(x) : x}</td>)}</tr>)}</tbody>
     </table>
   );
 }
@@ -87,11 +100,11 @@ function Cartas({ c }: { c: Contenido }) {
       {(['PO', 'SD', 'SD2', 'AN', 'QA'] as const).map((r) => {
         const carta = c.cartas[r];
         return (
-          <Pagina key={r} titulo={`Carta de ${c.roles[r]?.etiqueta ?? r}`} subtitulo="Carta secreta: no la muestres; lo que sabes se cuenta hablando.">
-            <h3>Quién eres</h3><p>{carta.quienEres}</p>
-            <h3>Lo que vienes a pedir</h3><ul>{carta.vienesAPedir.map((x) => <li key={x}>{x}</li>)}</ul>
-            <h3>Lo que das por hecho</h3><ul>{carta.dasPorHecho.map((x) => <li key={x}>{x}</li>)}</ul>
-            {carta.comoHablas && <><h3>Cómo hablas</h3><p>{carta.comoHablas}</p></>}
+          <Pagina key={r} titulo={`Carta de ${nombreRol(r)} · ${c.roles[r]?.nombre ?? ''}`} subtitulo="Carta secreta: no la muestres; lo que sabes se cuenta hablando.">
+            <h3>Quién eres</h3><p>{textoRoles(carta.quienEres)}</p>
+            <h3>Lo que vienes a pedir</h3><ul>{carta.vienesAPedir.map((x) => <li key={x}>{textoRoles(x)}</li>)}</ul>
+            <h3>Lo que das por hecho</h3><ul>{carta.dasPorHecho.map((x) => <li key={x}>{textoRoles(x)}</li>)}</ul>
+            {carta.comoHablas && <><h3>Cómo hablas</h3><p>{textoRoles(carta.comoHablas)}</p></>}
           </Pagina>
         );
       })}
@@ -103,8 +116,8 @@ function Hojas({ c }: { c: Contenido }) {
   return (
     <>
       {(['FR', 'RT'] as const).map((r) => (
-        <Pagina key={r} titulo={`Hoja de ${c.roles[r]?.nombre ?? r} (${r})`}>
-          <p style={{ whiteSpace: 'pre-line' }}>{c.hojas[r].texto}</p>
+        <Pagina key={r} titulo={`Hoja de ${nombreRol(r)}`}>
+          <p style={{ whiteSpace: 'pre-line' }}>{textoRoles(c.hojas[r].texto)}</p>
         </Pagina>
       ))}
     </>
@@ -123,19 +136,19 @@ function Plantillas({ c }: { c: Contenido }) {
     <>
       <Pagina titulo="01 · Canvas del ciclo">
         <Tabla columnas={['Campo', 'Contenido']} filas={canvas.map(([a, b]) => [a, b])} />
-        <h3>Apertura · A4</h3>
+        <h3>Bloque de apertura (encuentro 1)</h3>
         <Tabla
           columnas={['Perfil crítico', 'Persona y su reformulación (problema, alcance y resultado esperado)', '¿Equivalente?']}
-          filas={[['Quien aporta la necesidad (SD · Paco)', '', 'Sí / No'], ['Quien especifica o construye (AN)', '', 'Sí / No'], ['Quien acepta (PO · Lucía)', '', 'Sí / No'], ['Ajustes acordados', '', '']]}
+          filas={[['Quien aporta la necesidad (Paco, stakeholder de dominio)', '', 'Sí / No'], ['Quien especifica o construye (analista)', '', 'Sí / No'], ['Quien acepta (Lucía, responsable de decisión)', '', 'Sí / No'], ['Ajustes acordados', '', '']]}
         />
       </Pagina>
       <Pagina titulo="02 · Mapa de stakeholders">
         <Tabla columnas={['Actor', 'Rol', 'Qué aporta', '¿Hace la tarea?', '¿Decide?', 'Disponibilidad']} filas={p.mapa.map((a) => [a.actor, a.rol, a.aporta, a.haceLaTarea, a.decide, a.disponibilidad])} />
-        <p>Chequeo de suficiencia: {p.chequeoSuficiencia.respuesta}. {p.chequeoSuficiencia.detalle}</p>
+        <p>Chequeo de suficiencia: {p.chequeoSuficiencia.respuesta}. {textoRoles(p.chequeoSuficiencia.detalle)}</p>
       </Pagina>
       <Pagina titulo="03 · Declaración del problema y glosario vivo">
-        <p><b>Problema:</b> {p.declaracion.enunciado}</p>
-        <p><b>Afecta a:</b> {p.declaracion.afectados}</p>
+        <p><b>Problema:</b> {textoRoles(p.declaracion.enunciado)}</p>
+        <p><b>Afecta a:</b> {textoRoles(p.declaracion.afectados)}</p>
         <Tabla
           columnas={['ID', 'Término', 'Definición acordada', 'Ejemplo', '¿Crítico?', 'Estado', 'Responsable']}
           filas={[
@@ -164,7 +177,7 @@ function Plantillas({ c }: { c: Contenido }) {
         <h3>Parte B · calidad del conjunto (A5.3)</h3>
         <Tabla columnas={['Ítem', 'Resultado', 'Observación']} filas={[['B1 · Sin duplicados ni redundancias', '', ''], ['B2 · Sin contradicciones', '', '']]} />
         <h3>Parte C · validación de los críticos (A5.3)</h3>
-        <Tabla columnas={['ID crítico', 'C1 ¿Expresa su necesidad?', 'C2 ¿Confirma ejemplo y criterio?', 'C3 ¿Interpretan igual SD y QA?', 'ID en 06', 'Resultado que espera, en palabras del cliente']} filas={vacias(4, 6)} />
+        <Tabla columnas={['ID crítico', 'C1 ¿Expresa su necesidad?', 'C2 ¿Confirma ejemplo y criterio?', 'C3 ¿Interpretan igual Paco y el responsable de calidad?', 'ID en 06', 'Resultado que espera, en palabras del cliente']} filas={vacias(4, 6)} />
       </Pagina>
       <Pagina titulo="06 · Registro de validación y decisiones">
         <Tabla
@@ -179,7 +192,7 @@ function Plantillas({ c }: { c: Contenido }) {
           filas={['E1 · Problema compartido', 'E2 · Vocabulario compartido', 'E3 · Críticos interpretados igual', 'E4 · Divergencias explícitas', 'E5 · Entendimiento transferible'].map((e) => [e, '', ''])}
         />
         <h3>Prueba de traspaso (E5)</h3>
-        <Tabla columnas={['Requisito crítico', 'Quién reconstruye y qué entendió', '¿El PO confirma que coincide?', 'Si no coincide: qué se corrigió']} filas={vacias(3, 4)} />
+        <Tabla columnas={['Requisito crítico', 'Quién reconstruye y qué entendió', '¿Lucía confirma que coincide?', 'Si no coincide: qué se corrigió']} filas={vacias(3, 4)} />
         <h3>Otras acciones</h3>
         <Tabla columnas={['Origen', 'Acción', 'Responsable', 'Fecha']} filas={vacias(4, 4)} />
       </Pagina>
@@ -190,12 +203,15 @@ function Plantillas({ c }: { c: Contenido }) {
 function MedicionImpresa({ c }: { c: Contenido }) {
   return (
     <>
-      {['Medición previa', 'Medición posterior'].map((titulo) => (
+      {['Medición previa', 'Medición posterior'].map((titulo, fase) => (
         <Pagina key={titulo} titulo={titulo} subtitulo="Responde solo. No escribas tu nombre. Mesa: ____   Rol: ____">
+          <p>{fase === 0 && c.protocolo?.version === 2 && c.protocolo.cartaEnPrevia
+            ? 'Puedes consultar únicamente tu carta o tu hoja personal. Si no contiene la información, responde «No sé» o «No aparece en mi carta». No consultes al equipo ni el glosario.'
+            : 'Responde de memoria, sin consultar cartas, hojas, glosario ni al equipo. Si no lo sabes, responde «No sé».'}</p>
           {c.medicion.map((m, i) => (
             <div key={m.id}>
               <h3>Pregunta {i + 1}</h3>
-              <p>{m.pregunta}</p>
+              <p>{textoRoles(m.pregunta)}</p>
               <p>____________________________________________________________</p>
             </div>
           ))}
@@ -211,6 +227,11 @@ function CuestionarioImpreso({ c }: { c: Contenido }) {
     <Pagina titulo="Cuestionario" subtitulo="No escribas tu nombre. Mesa: ____   Rol: ____">
       <h3>¿Qué tan de acuerdo estás? (1 nada de acuerdo · 5 totalmente de acuerdo)</h3>
       <Tabla columnas={['Afirmación', '1', '2', '3', '4', '5']} filas={c.cuestionario.afirmaciones.map((a) => [a, '', '', '', '', ''])} />
+      {c.cuestionario.utilidad && <>
+        <h3>Utilidad del proceso</h3>
+        <p>Piensa en cómo el proceso ayudó a tu equipo a entender el problema, aclarar términos, resolver diferencias y acordar los requisitos. Marca de 1 (nada de acuerdo) a 5 (totalmente de acuerdo).</p>
+        <Tabla columnas={['Afirmación', '1', '2', '3', '4', '5']} filas={c.cuestionario.utilidad.items.map((a) => [a.texto, '', '', '', '', ''])} />
+      </>}
       <h3>¿Cuánto te exigió la actividad? Marca una casilla (de 0 a 100, de 5 en 5)</h3>
       {c.cuestionario.tlx.map((t) => (
         <div key={t.id}>
@@ -219,9 +240,14 @@ function CuestionarioImpreso({ c }: { c: Contenido }) {
           <p style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}><span>{t.bajo}</span><span>{t.alto}</span></p>
         </div>
       ))}
-      <h3>{c.cuestionario.abierta}</h3>
+      <h3>{textoRoles(c.cuestionario.abierta)}</h3>
       <p>____________________________________________________________</p>
       <p>____________________________________________________________</p>
+      {c.cuestionario.utilidad && <>
+        <h3>{textoRoles(c.cuestionario.utilidad.abierta)}</h3>
+        <p>____________________________________________________________</p>
+        <p>____________________________________________________________</p>
+      </>}
     </Pagina>
   );
 }

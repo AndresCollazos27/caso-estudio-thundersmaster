@@ -61,7 +61,7 @@ function Evidencias() {
             <span className="etq">{EVIDENCIAS[e]}</span>
             <p className="nota">Lectura automática: {lecturas[e].texto}</p>
             <Opciones
-              etiqueta={EVIDENCIAS[e]} valores={SI_NO_PEND} valor={marca?.resultado} deshabilitado={!editable}
+              etiqueta={EVIDENCIAS[e]} valores={SI_NO_PEND} valor={marca?.resultado} deshabilitado={!editable || envio.enviando}
               onElegir={(resultado) => envio.correr(() => enviar('marcarEvidencia', { evidencia: e, resultado, nota: marca?.nota ?? '' }), 'Marcada')}
             />
             {naranja && <p className="aviso">Marcaste «Sí», pero la lectura no lo respalda. Revísala con tu mesa.</p>}

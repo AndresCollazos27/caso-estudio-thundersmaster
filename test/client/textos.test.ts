@@ -6,9 +6,19 @@ const vista = (paraTodos: string, paraMi: string[]) => ({ ahora: { paraTodos, pa
 
 describe('textos del celular', () => {
   it('textoAhora une paraTodos con las instrucciones de cada rol propio', () => {
-    expect(textoAhora(vista('Para todos', ['Como FR', 'Como RT']))).toEqual(['Como FR', 'Como RT', 'Para todos']);
+    expect(textoAhora(vista('Para todos', ['Como FR', 'Como RT']))).toEqual(['Como facilitador', 'Como relator', 'Para todos']);
     expect(textoAhora(vista('Igual', ['Igual']))).toEqual(['Igual']);
     expect(textoAhora(vista('Solo esto', []))).toEqual(['Solo esto']);
+  });
+
+  it('después de enviar la medición o la encuesta, «Ahora» dice que ya respondió y qué sigue', () => {
+    const base = { ahora: { paraTodos: 'Responde las cuatro preguntas.', paraMi: ['Responde solo.'] } };
+    expect(textoAhora({ ...base, medicion: { respondida: true } } as unknown as VistaJugador))
+      .toEqual(['Ya enviaste tus respuestas. Espera a que el profesor Leandro pase al siguiente paso.']);
+    expect(textoAhora({ ...base, cuestionario: { respondido: true } } as unknown as VistaJugador))
+      .toEqual(['Gracias por participar. Ya enviaste la encuesta.']);
+    expect(textoAhora({ ...base, medicion: { respondida: false } } as unknown as VistaJugador))
+      .toEqual(['Responde solo.', 'Responde las cuatro preguntas.']);
   });
 
   it('colorRol devuelve el color del contenido', () => {
@@ -27,7 +37,7 @@ describe('textos del celular', () => {
     expect(minutoActual({ ...s, tramoIndice: null }, 0)).toBe(0);
   });
 
-  it('durante las dos mediciones no se ofrecen la carta, el glosario ni la ficha técnica', () => {
+  it('durante las dos mediciones no se ofrece la barra general de ayudas', () => {
     const en = (tramo: string | null) => ({ sesion: { tramo } }) as unknown as VistaJugador;
     expect(ayudasVisibles(en('medicion_previa'))).toBe(false);
     expect(ayudasVisibles(en('medicion_posterior'))).toBe(false);
@@ -35,8 +45,12 @@ describe('textos del celular', () => {
     expect(ayudasVisibles(en(null))).toBe(true);
   });
 
-  it('etiquetaRol usa la etiqueta del contenido y, si falta, el código del rol', () => {
-    expect(etiquetaRol(contenidoReal().roles, 'PO')).toBe('PO · Lucía');
-    expect(etiquetaRol({}, 'RT')).toBe('RT');
+  it('etiquetaRol muestra nombres completos incluso con etiquetas antiguas o faltantes', () => {
+    const roles = contenidoReal().roles;
+    roles.PO!.etiqueta = 'PO · Lucía';
+    roles.SD2!.etiqueta = 'SD · Carmen';
+    expect(etiquetaRol(roles, 'PO')).toBe('Responsable de decisión · Lucía');
+    expect(etiquetaRol(roles, 'SD2')).toBe('Stakeholder de dominio · Carmen');
+    expect(etiquetaRol({}, 'RT')).toBe('Relator o gestor de trazabilidad');
   });
 });

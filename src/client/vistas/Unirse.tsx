@@ -79,7 +79,7 @@ export function Unirse({ codigoInicial, onUnido }: { codigoInicial: string; onUn
         </div>
         <button type="button" className="btn" disabled={!info || !acepto || enviando} onClick={unirme}>{enviando ? 'Entrando…' : 'Unirme'}</button>
         {error && <p className="error" role="alert">{error}</p>}
-        <p className="nota">Después, la pantalla te dirá tu mesa.</p>
+        <p className="nota">Después de entrar, espera a que el profesor Leandro organice las mesas. Tu mesa y tu rol aparecerán aquí.</p>
       </div>
     </main>
   );

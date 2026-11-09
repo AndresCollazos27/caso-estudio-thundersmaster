@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ItemRonda } from '../../shared/tipos.js';
 import { RESULTADO_I3, TECNICA_I3, type TecnicaI3 } from '../../shared/valores.js';
 import type { VistaRonda } from '../../shared/vistas.js';
@@ -40,8 +40,13 @@ function UnaRonda({ r }: { r: VistaRonda }) {
 function Responder({ r, item }: { r: VistaRonda; item: ItemRonda }) {
   const { enviar } = usarMesa();
   const n = r.items.findIndex((i) => i.id === item.id) + 1;
+  // Cuando se abre una ronda, quien estaba más abajo (en el glosario, en las necesidades) la ve sin buscarla.
+  const caja = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    caja.current?.scrollIntoView({ block: 'start' });
+  }, [r.numero]);
   return (
-    <div className="papel">
+    <div className="papel ronda-abierta" ref={caja}>
       <p className="paso">Ronda {r.numero} · pregunta {n} de {r.items.length} · solo y en silencio</p>
       <h2>{item.pregunta}</h2>
       <CampoTexto
@@ -71,12 +76,12 @@ function Resultado({ r, item }: { r: VistaRonda; item: ItemRonda }) {
       </div>
       {marcar && (
         <Opciones
-          marcas etiqueta={`Resultado de «${item.termino}»`} valores={RESULTADO_I3} valor={resultado?.resultado}
+          marcas etiqueta={`Resultado de «${item.termino}»`} valores={RESULTADO_I3} valor={resultado?.resultado} deshabilitado={envio.enviando}
           onElegir={(x) => envio.correr(() => enviar('marcarRonda', { numero: r.numero, itemId: item.id, resultado: x }), 'Marcado')}
         />
       )}
       {resultado && !marcar && <p className="nota">Resultado: <b>{resultado.resultado}</b></p>}
-      {resultado?.divergenciaId && <p className="aviso">Se creó {resultado.divergenciaId}. El RT la completa en el registro 06.</p>}
+      {resultado?.divergenciaId && <p className="aviso">Se creó {resultado.divergenciaId}. El relator la completa en el registro 06.</p>}
       <Mensajes error={envio.error} />
     </div>
   );
@@ -122,7 +127,8 @@ function FormItem({ numero, item, onListo }: { numero: 1 | 2; item: ItemRonda; o
       <div className="campo"><span className="etq">Técnica</span><Opciones etiqueta="Técnica" valores={TECNICA_I3} valor={d.tecnica} onElegir={(x) => f.poner('tecnica', x)} /></div>
       <AreaTexto etiqueta="Pregunta" valor={d.pregunta} onCambio={(t) => f.poner('pregunta', t)} />
       <div className="fila">
-        <button type="button" className="btn sec" onClick={() => { f.limpiar(); onListo(); }}>Cancelar</button>
+        <button type="button" className="btn sec" onClick={onListo}>Volver</button>
+        {f.hayCambios && <button type="button" className="enlace" onClick={() => { f.limpiar(); onListo(); }}>Descartar cambios</button>}
         <button type="button" className="btn" disabled={envio.enviando || !d.pregunta.trim()} onClick={guardar}>Guardar el ítem</button>
       </div>
       <Mensajes error={envio.error} />

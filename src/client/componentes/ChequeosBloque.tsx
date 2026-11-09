@@ -19,11 +19,11 @@ export function ChequeosBloque() {
       <h2>Cierre de bloque (I3)</h2>
       <div className="campo">
         <span className="etq">5 · {C5}</span>
-        <Opciones etiqueta="Chequeo 5" valores={SI_NO_PEND} valor={m.chequeosBloque.c5} onElegir={(x) => marcar('c5', x)} />
+        <Opciones etiqueta="Chequeo 5" valores={SI_NO_PEND} valor={m.chequeosBloque.c5} deshabilitado={envio.enviando} onElegir={(x) => marcar('c5', x)} />
       </div>
       <div className="campo">
         <span className="etq">6 · {C6}</span>
-        <Opciones etiqueta="Chequeo 6" valores={SI_NO_PEND} valor={m.chequeosBloque.c6} onElegir={(x) => marcar('c6', x)} />
+        <Opciones etiqueta="Chequeo 6" valores={SI_NO_PEND} valor={m.chequeosBloque.c6} deshabilitado={envio.enviando} onElegir={(x) => marcar('c6', x)} />
       </div>
       <Mensajes error={envio.error} listo={envio.listo} />
       <CampoTexto

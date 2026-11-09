@@ -270,7 +270,10 @@ export function aplicarEvento(estado: EstadoDeSesion | null, ev: Evento): Estado
       break;
     case 'cuestionario.respondido': {
       const d = ev.datos;
-      s.cuestionario[d.participante] = { afirmaciones: [...d.afirmaciones], tlx: [...d.tlx], abierta: d.abierta };
+      s.cuestionario[d.participante] = {
+        afirmaciones: [...d.afirmaciones], tlx: [...d.tlx], abierta: d.abierta,
+        ...(d.utilidad ? { utilidad: { respuestas: { ...d.utilidad.respuestas }, abierta: d.utilidad.abierta } } : {}),
+      };
       break;
     }
     case 'entrevista.nota': {

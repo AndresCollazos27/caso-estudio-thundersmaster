@@ -138,6 +138,11 @@ export interface Participante {
 
 export type EstadoSesion = 'inscripcion' | 'en_curso' | 'cerrada' | 'terminada';
 
+export interface RespuestaUtilidad {
+  respuestas: Record<string, number>;
+  abierta: string;
+}
+
 export interface EstadoDeSesion {
   id: string;
   codigo: string;
@@ -156,7 +161,7 @@ export interface EstadoDeSesion {
   llegadas: string[];
   mesas: Record<number, Mesa>;
   medicion: Record<string, { previa?: string[]; posterior?: string[] }>;
-  cuestionario: Record<string, { afirmaciones: number[]; tlx: number[]; abierta: string }>;
+  cuestionario: Record<string, { afirmaciones: number[]; tlx: number[]; abierta: string; utilidad?: RespuestaUtilidad }>;
   entrevista: { pregunta: number; texto: string }[];
   ultimoSeq: number;
 }

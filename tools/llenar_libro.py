@@ -9,13 +9,18 @@ desplegables que dependen de otras hojas, pero los valores y las fórmulas se co
 import argparse
 import csv
 import json
+import re
 import sys
 import warnings
+from copy import copy
 from datetime import datetime, timezone
 from pathlib import Path
 
 import openpyxl
 from openpyxl.cell.cell import MergedCell
+from openpyxl.formula.tokenizer import Tokenizer
+from openpyxl.formula.translate import Translator
+from openpyxl.worksheet.cell_range import CellRange, MultiCellRange
 
 RAIZ = Path(__file__).resolve().parent.parent
 LIBRO = RAIZ / 'plantilla' / 'THUNDERS-Master_v1.6_plantillas_e_instrumentos.xlsx'
@@ -48,8 +53,73 @@ def _fecha(ms):
 
 
 def _nombre(roles, rol):
+    # El libro es el instrumento de la versión final y usa las siglas de sus roles.
     nombre = (roles.get(rol) or {}).get('nombre')
     return f'{nombre} ({rol})' if nombre else rol
+
+
+def _ampliar_glosario(wb, cantidad):
+    """Amplía la copia del libro y sus referencias; insert_rows no actualiza fórmulas ni combinaciones."""
+    extra = max(0, cantidad - 40)
+    if not extra:
+        return
+    ws = _hoja(wb, '03')
+    combinadas = [CellRange(str(r)) for r in ws.merged_cells.ranges if r.min_row >= 56]
+    for rango in combinadas:
+        ws.unmerge_cells(str(rango))
+    dimensiones = {n: copy(d) for n, d in ws.row_dimensions.items() if n >= 56}
+    for n in dimensiones:
+        del ws.row_dimensions[n]
+    ws.insert_rows(56, extra)
+    for n, dimension in dimensiones.items():
+        dimension.index = n + extra
+        ws.row_dimensions[n + extra] = dimension
+    for rango in combinadas:
+        rango.shift(row_shift=extra)
+        ws.merge_cells(str(rango))
+
+    def ampliar_rango(referencia):
+        coincidencia = re.fullmatch(r'(\$?[A-Z]{1,3}\$?)(\d+)(?::(\$?[A-Z]{1,3}\$?)(\d+))?', referencia)
+        if not coincidencia:
+            return referencia
+        columna, inicio, columna_fin, fin = coincidencia.groups()
+        inicio = int(inicio)
+        nuevo_inicio = inicio + extra if inicio >= 56 else inicio
+        if fin is None:
+            return f'{columna}{nuevo_inicio}'
+        fin = int(fin)
+        nuevo_fin = fin + extra if fin >= 56 or (inicio == 16 and fin == 55) else fin
+        return f'{columna}{nuevo_inicio}:{columna_fin}{nuevo_fin}'
+
+    for hoja in wb:
+        for fila in hoja:
+            for celda in fila:
+                if celda.data_type != 'f':
+                    continue
+                tokens = Tokenizer(celda.value).items
+                for token in tokens:
+                    if token.type != 'OPERAND' or token.subtype != 'RANGE':
+                        continue
+                    if '!' in token.value:
+                        nombre, referencia = token.value.rsplit('!', 1)
+                        if nombre.strip("'").replace("''", "'") == ws.title:
+                            token.value = nombre + '!' + ampliar_rango(referencia)
+                    elif hoja == ws:
+                        token.value = ampliar_rango(token.value)
+                celda.value = '=' + ''.join(token.value for token in tokens)
+    for validacion in ws.data_validations.dataValidation:
+        validacion.sqref = MultiCellRange(' '.join(ampliar_rango(str(r)) for r in validacion.sqref.ranges))
+    # Las fórmulas nuevas ya apuntan a sus filas finales y no se deben desplazar otra vez.
+    for fila in range(56, 56 + extra):
+        for col in range(1, ws.max_column + 1):
+            origen, destino = ws.cell(55, col), ws.cell(fila, col)
+            destino._style = copy(origen._style)
+            destino.number_format = origen.number_format
+            destino.protection = copy(origen.protection)
+            destino.alignment = copy(origen.alignment)
+            if origen.data_type == 'f':
+                destino.value = Translator(origen.value, origin=origen.coordinate).translate_formula(destino.coordinate)
+    ws.print_area = f'A1:G{ws.max_row}'
 
 
 def _llenos(d, claves):
@@ -136,6 +206,7 @@ def contar_campos(mesa):
 def llenar_mesa(libro_plantilla: str, mesa: dict, salida: str, contenido: dict | None = None) -> None:
     """Crea en `salida` una copia del libro con los datos de la mesa (y lo prellenado del caso, si llega el contenido)."""
     wb = openpyxl.load_workbook(libro_plantilla)
+    _ampliar_glosario(wb, len(mesa.get('glosario', [])))
     contenido = contenido or {}
     p = contenido.get('plantillas', {})
     roles = contenido.get('roles', {})
@@ -168,7 +239,7 @@ def llenar_mesa(libro_plantilla: str, mesa: dict, salida: str, contenido: dict |
     escribir(ws, 'C7', declaracion.get('enunciado'))
     escribir(ws, 'C8', declaracion.get('afectados'))
     escribir(ws, 'C9', declaracion.get('contraste'))
-    for i, t in enumerate(mesa.get('glosario', [])[:40]):
+    for i, t in enumerate(mesa.get('glosario', [])):
         for col, clave in zip('BCDEFG', ['termino', 'definicion', 'ejemplo', 'critico', 'estado', 'responsable']):
             escribir(ws, f'{col}{16 + i}', t.get(clave))
 
@@ -250,7 +321,10 @@ def llenar_mesa(libro_plantilla: str, mesa: dict, salida: str, contenido: dict |
     for fila, valor in zip(range(7, 18), parametros_ligereza(mesa, contenido)):
         escribir(ws, f'B{fila}', valor)
 
+    wb.calculation.fullCalcOnLoad = True
+    wb.calculation.forceFullCalc = True
     wb.save(salida)
+    wb.close()
 
 
 def _escribir_csv(ruta, columnas, filas):
@@ -267,7 +341,7 @@ def _iso(ms):
 
 
 def generar_csv(exportacion: dict, carpeta: str) -> list[str]:
-    """Escribe medicion, rondas, divergencias, cuestionario, celdas_por_requisito y eventos en CSV."""
+    """Escribe las mediciones, el glosario completo y los registros del estudio en CSV."""
     destino = Path(carpeta)
     destino.mkdir(parents=True, exist_ok=True)
     personas = {p['id']: p for p in exportacion.get('participantes', [])}
@@ -276,12 +350,16 @@ def generar_csv(exportacion: dict, carpeta: str) -> list[str]:
         p = personas.get(pid, {})
         return p.get('mesa', ''), '+'.join(p.get('roles', []))
 
+    contenido = exportacion.get('contenido') or {}
+    # En la versión 2 del protocolo la previa se responde con la carta a mano; la posterior, nunca.
+    carta_en_previa = bool((contenido.get('protocolo') or {}).get('cartaEnPrevia'))
     filas = []
     for pid, fases in exportacion.get('medicion', {}).items():
         for fase in ('previa', 'posterior'):
             if fases.get(fase):
-                filas.append([pid, *mesa_y_roles(pid), fase, *fases[fase]])
-    creados = [_escribir_csv(destino / 'medicion.csv', ['participante', 'mesa', 'roles', 'fase', 'p1', 'p2', 'p3', 'p4'], filas)]
+                con_carta = 'Sí' if fase == 'previa' and carta_en_previa else 'No'
+                filas.append([pid, *mesa_y_roles(pid), fase, con_carta, *fases[fase]])
+    creados = [_escribir_csv(destino / 'medicion.csv', ['participante', 'mesa', 'roles', 'fase', 'con_carta', 'p1', 'p2', 'p3', 'p4'], filas)]
 
     filas = []
     for m in exportacion.get('mesas', []):
@@ -297,11 +375,28 @@ def generar_csv(exportacion: dict, carpeta: str) -> list[str]:
     creados.append(_escribir_csv(destino / 'divergencias.csv',
                                  ['mesa', 'id', 'detectada_en', 'afecta_a', 'descripcion', 'resolucion', 'estado', 'responsable', 'fecha_limite'], filas))
 
-    tlx = [e['id'] for e in (exportacion.get('contenido') or {}).get('cuestionario', {}).get('tlx', [])] or [f'tlx{i}' for i in range(1, 7)]
-    filas = [[pid, *mesa_y_roles(pid), *r.get('afirmaciones', []), *r.get('tlx', []), r.get('abierta', '')]
-             for pid, r in exportacion.get('cuestionario', {}).items()]
+    campos_glosario = ['id', 'termino', 'definicion', 'ejemplo', 'critico', 'estado', 'responsable', 'editadoPor']
+    filas = [[m['numero'], *[t.get(campo, '') for campo in campos_glosario]]
+             for m in exportacion.get('mesas', []) for t in m.get('glosario', [])]
+    creados.append(_escribir_csv(destino / 'glosario.csv',
+                                 ['mesa', 'id', 'termino', 'definicion', 'ejemplo', 'critico', 'estado', 'responsable', 'editado_por'], filas))
+
+    tlx = [e['id'] for e in contenido.get('cuestionario', {}).get('tlx', [])] or [f'tlx{i}' for i in range(1, 7)]
+    # Las afirmaciones de utilidad y su orden salen del contenido con que se creó la sesión.
+    utilidad_items = [i['id'] for i in ((contenido.get('cuestionario') or {}).get('utilidad') or {}).get('items', [])]
+    columnas_utilidad = [*[f'utilidad_{i}' for i in utilidad_items], 'utilidad_abierta'] if utilidad_items else []
+    filas = []
+    for pid, r in exportacion.get('cuestionario', {}).items():
+        utilidad = r.get('utilidad') or {}
+        respuestas = utilidad.get('respuestas') or {}
+        afirmaciones = r.get('afirmaciones') or []
+        carga = r.get('tlx') or []
+        filas.append([pid, *mesa_y_roles(pid), *[(afirmaciones + [''] * 5)[i] for i in range(5)],
+                      *[(carga + [''] * len(tlx))[i] for i in range(len(tlx))], r.get('abierta', ''),
+                      *([*[respuestas.get(i, '') for i in utilidad_items], utilidad.get('abierta', '')] if utilidad_items else [])])
     creados.append(_escribir_csv(destino / 'cuestionario.csv',
-                                 ['participante', 'mesa', 'roles', 'a1', 'a2', 'a3', 'a4', 'a5', *[f'tlx_{x}' for x in tlx], 'abierta'], filas))
+                                 ['participante', 'mesa', 'roles', 'a1', 'a2', 'a3', 'a4', 'a5', *[f'tlx_{x}' for x in tlx], 'abierta',
+                                  *columnas_utilidad], filas))
 
     plantillas = ['01', '03', '04', '05', '06', '07', 'I2', 'I3']
     filas = []

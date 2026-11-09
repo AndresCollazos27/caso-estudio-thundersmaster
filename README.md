@@ -75,7 +75,7 @@ Antes, ensaye con una sesión de prueba ×60: «Simular 36 participantes», cier
 ## Después de la sesión
 
 1. En la vista de los autores, «Exportar todo (JSON)». El archivo se llama `tomatera-CÓDIGO-AAAAMMDD-HHmm.json`.
-2. En el computador de los autores: `pip install -r tools/requirements.txt` y luego `python tools/llenar_libro.py tomatera-CÓDIGO-….json salida/`. Quedan `mesa-01.xlsx`, `mesa-02.xlsx`… y los CSV `medicion.csv`, `rondas.csv`, `divergencias.csv`, `cuestionario.csv`, `celdas_por_requisito.csv` y `eventos.csv`.
+2. En el computador de los autores: `pip install -r tools/requirements.txt` y luego `python tools/llenar_libro.py tomatera-CÓDIGO-….json salida/`. Quedan `mesa-01.xlsx`, `mesa-02.xlsx`… y los CSV `medicion.csv`, `rondas.csv`, `divergencias.csv`, `cuestionario.csv`, `glosario.csv`, `celdas_por_requisito.csv` y `eventos.csv`. El libro amplía el glosario cuando supera 40 términos y solicita a Excel recalcular las fórmulas al abrirlo.
 3. Abra cada libro en Excel para que se recalculen E1 a E5. openpyxl descarta las listas desplegables que dependen de otras hojas, pero los valores y las fórmulas se conservan.
 4. Respalde la carpeta `data`: `tar czf tomatera-data-AAAAMMDD.tgz data`. Guárdela con cuidado: a diferencia de la exportación, el registro en bruto conserva los apodos y las claves de los celulares. Cuando ya no se necesite, bórrela del VPS.
 5. Si no se va a usar más, apague la app: `docker compose down`.
@@ -94,6 +94,8 @@ Antes, ensaye con una sesión de prueba ×60: «Simular 36 participantes», cier
 
 ## Para desarrollar
 
-- `npm install`, y luego `npm run dev` (servidor en el puerto 8090) y `npx vite` (cliente en el 5173, que pasa `/api` y `/socket.io` al servidor). O `npm run build` y abrir el servidor directamente.
+Las sesiones nuevas usan el protocolo 2: permiten consultar solo la carta u hoja propia durante la medición previa, y añaden cinco afirmaciones de utilidad y un comentario opcional a la encuesta. Las sesiones anteriores conservan sus instrumentos. Cada barra de carga empieza sin responder y pide un toque o un arrastre; el 0 es una respuesta válida. Toda la mesa puede agregar y corregir palabras del glosario desde la apertura del encuentro 1 hasta el cierre, y el celular nombra los roles con su nombre completo, sin siglas. La definición y el procedimiento para documentar la utilidad están en [docs/utilidad-del-proceso.md](docs/utilidad-del-proceso.md).
+
+- `npm install`, y luego `npm run dev` (servidor en el puerto de `PORT`; en el computador de los autores, 8091, porque el 8090 lo usa otro programa) y `npx vite` (cliente en el 5173, que pasa `/api` y `/socket.io` al servidor). O `npm run build` y abrir el servidor directamente.
 - Pruebas: `npm test`, `npm run typecheck` y `python -m unittest tools/test_llenar_libro.py`.
 - El contenido del caso se cambia en `content/caso-tomatera.yaml`. Si el archivo tiene un error, el servidor no arranca y dice en qué línea está.

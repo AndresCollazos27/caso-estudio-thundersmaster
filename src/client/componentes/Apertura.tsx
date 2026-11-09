@@ -49,7 +49,7 @@ function MarcasFR() {
             {version ? <p className="ans">{version.texto}</p> : <p className="nota">Todavía no llegó.</p>}
             {version && (
               <Opciones
-                etiqueta={`¿La versión de ${p} dice lo mismo?`} valores={SI_NO} valor={m.apertura.equivalencia[p]} deshabilitado={!editable}
+                etiqueta={`¿La versión de ${etiquetaRol(v.roles, p)} dice lo mismo?`} valores={SI_NO} valor={m.apertura.equivalencia[p]} deshabilitado={!editable || envio.enviando}
                 nombres={{ Sí: 'Dice lo mismo', No: 'No dice lo mismo' }}
                 onElegir={(valor) => envio.correr(() => enviar('marcarEquivalencia', { perfil: p, valor }), valor === 'No' ? 'Marcado; se creó una divergencia en 06' : 'Marcado')}
               />

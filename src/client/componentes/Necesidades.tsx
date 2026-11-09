@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { textoRoles } from '../../shared/roles.js';
 import type { Necesidad } from '../../shared/tipos.js';
 import { ESTADO_NECESIDAD, PRIORIDAD, type EstadoNecesidad, type Prioridad } from '../../shared/valores.js';
 import { usarMesa } from '../contexto.js';
@@ -13,12 +14,21 @@ export function Necesidades() {
   const { v, m } = usarMesa();
   const editable = puedo(v, 'guardarNecesidad') && tiene(v, 'AN');
   const [editando, setEditando] = useState<string | null>(null);
+  const [aviso, setAviso] = useState('');
+  const listaId = useId();
+  const volver = (guardado = false) => {
+    const destino = editando ? `${listaId}-${editando}` : listaId;
+    setEditando(null);
+    setAviso(guardado ? 'Necesidad guardada.' : 'Puedes volver a abrir la necesidad para continuar tu borrador.');
+    requestAnimationFrame(() => document.getElementById(destino)?.focus());
+  };
   const actual = editando ? m.necesidades.find((n) => n.id === editando) ?? null : null;
   return (
     <>
-      {editable && <FormNecesidad key={editando ?? 'nueva'} necesidad={actual} onListo={() => setEditando(null)} />}
+      {aviso && <p className="listo" role="status">{aviso}</p>}
+      {editable && <FormNecesidad key={editando ?? 'nueva'} necesidad={actual} onListo={volver} />}
       <div className="lista" aria-label="Necesidades registradas">
-        <h3 className="paso">Necesidades registradas (04)</h3>
+        <h3 className="paso" id={listaId} tabIndex={-1}>Necesidades registradas (04)</h3>
         {m.necesidades.length === 0 && <p className="nota">Todavía no hay necesidades.</p>}
         {[...m.necesidades].reverse().map((n) => {
           const cuerpo = (
@@ -29,7 +39,7 @@ export function Necesidades() {
             </>
           );
           return editable
-            ? <button key={n.id} type="button" className={`item${editando === n.id ? ' elegido' : ''}`} onClick={() => setEditando(n.id)}>{cuerpo}</button>
+            ? <button key={n.id} id={`${listaId}-${n.id}`} type="button" className={`item${editando === n.id ? ' elegido' : ''}`} onClick={() => { setAviso(''); setEditando(n.id); }}>{cuerpo}</button>
             : <div key={n.id} className="item">{cuerpo}</div>;
         })}
       </div>
@@ -38,9 +48,11 @@ export function Necesidades() {
 }
 
 // «Lucía Ferrer, dueña» → «Lucía».
-const corto = (fuente: string) => fuente.split(/[ ,]/)[0] || fuente;
+const corto = (fuente: string) => textoRoles(fuente.split(/[ ,]/)[0] || fuente);
 
-function FormNecesidad({ necesidad, onListo }: { necesidad: Necesidad | null; onListo: () => void }) {
+function FormNecesidad({ necesidad, onListo }: { necesidad: Necesidad | null; onListo: (guardado?: boolean) => void }) {
+  const titulo = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { if (necesidad) titulo.current?.focus(); }, [necesidad?.id]);
   const { v, m, enviar } = usarMesa();
   const envio = usarEnvio();
   const fuentes = (v.contexto?.mapa ?? []).filter((a) => ROLES_FUENTE.has(a.rol)).map((a) => a.actor);
@@ -59,12 +71,13 @@ function FormNecesidad({ necesidad, onListo }: { necesidad: Necesidad | null; on
     if (datos.necesidad !== undefined) datos.necesidad = datos.necesidad.trim();
     if (await envio.correr(() => enviar('guardarNecesidad', datos), `Guardada ${necesidad?.id ?? siguiente}`)) {
       f.limpiar();
-      onListo();
+      onListo(true);
     }
   }
   return (
-    <div className="papel">
-      <h2>{necesidad ? `Editar ${necesidad.id}` : 'Nueva necesidad'}</h2>
+    <fieldset className="papel formulario-bloqueable" disabled={envio.enviando}>
+      <h2 ref={titulo} tabIndex={-1}>{necesidad ? `Editar ${necesidad.id}` : 'Nueva necesidad'}</h2>
+      {f.hayCambios && <p className="nota borrador">Borrador guardado en este dispositivo; todavía no se ha enviado.</p>}
       <AreaTexto etiqueta="Necesidad" valor={d.necesidad} onCambio={(t) => f.poner('necesidad', t)} ayuda="Qué necesita y para qué, en palabras de quien lo dice." />
       <div className="campo">
         <span className="etq">Fuente</span>
@@ -75,12 +88,13 @@ function FormNecesidad({ necesidad, onListo }: { necesidad: Necesidad | null; on
       <div className="campo"><span className="etq">Prioridad</span><Opciones etiqueta="Prioridad" valores={PRIORIDAD} valor={d.prioridad} onElegir={(x) => f.poner('prioridad', x)} /></div>
       {necesidad && <div className="campo"><span className="etq">Estado</span><Opciones etiqueta="Estado" valores={ESTADO_NECESIDAD} valor={d.estado} onElegir={(x) => f.poner('estado', x)} /></div>}
       <div className="fila">
-        {necesidad && <button type="button" className="btn sec" onClick={() => { f.limpiar(); onListo(); }}>Cancelar</button>}
+        {necesidad && <button type="button" className="btn sec" onClick={() => onListo()}>Volver</button>}
+        {f.hayCambios && <button type="button" className="enlace" onClick={() => { f.limpiar(); onListo(); }}>Descartar cambios</button>}
         <button type="button" className="btn" disabled={envio.enviando || !d.necesidad.trim() || !d.fuente || (necesidad !== null && !f.hayCambios) || excedeTexto(d.necesidad, d.supuestos, d.contextoValor)} onClick={guardar}>
           Guardar {necesidad?.id ?? siguiente}
         </button>
       </div>
       <Mensajes error={envio.error} listo={envio.listo} />
-    </div>
+    </fieldset>
   );
 }

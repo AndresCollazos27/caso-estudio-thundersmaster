@@ -1,12 +1,13 @@
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { TipoComando } from '../../shared/comandos.js';
 import type { Evento } from '../../shared/eventos.js';
+import { nombreRol, textoRoles } from '../../shared/roles.js';
 import { formatoReloj } from '../../shared/tiempo.js';
 import type { EstadoDeSesion, Mesa } from '../../shared/tipos.js';
 import { ROLES, type Rol, type TramoId } from '../../shared/valores.js';
 import type { VistaAutores } from '../../shared/vistas.js';
 import { restanteAhora, type Conexion } from '../conexion.js';
-import { etiquetaRol, minutoActual } from '../textos.js';
+import { minutoActual } from '../textos.js';
 import { usarConexion, usarEstado, usarTic } from '../usarConexion.js';
 
 type Vista = VistaAutores & { registro: Evento[]; enlaceBase: string; enlaceLeandro: string };
@@ -28,25 +29,51 @@ export function Autores() {
   const q = new URLSearchParams(window.location.search);
   const k = q.get('k') ?? '';
   const [inicial] = useState(() => q.get('s') ?? undefined);
-  const con = usarConexion(k ? { tipo: 'autores', k, sesionId: inicial } : null);
+  const [elegida, setElegida] = useState<string | null>(inicial ?? null);
+  const con = usarConexion(k ? { tipo: 'autores', k, sesionId: elegida ?? undefined } : null);
   const estado = usarEstado(con);
   const [sesiones, setSesiones] = useState<ResumenSesion[]>([]);
-  const [elegida, setElegida] = useState<string | null>(inicial ?? null);
+  const [seleccionando, setSeleccionando] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const seleccionPendiente = useRef(false);
+  const operacionPendiente = useRef(false);
+
+  function marcarOcupado(valor: boolean) {
+    operacionPendiente.current = valor;
+    setOcupado(valor);
+  }
 
   useEffect(() => (con ? con.escuchar('sesiones', (x) => setSesiones(x as ResumenSesion[])) : undefined), [con]);
 
-  async function elegir(id: string) {
-    if (!con) return;
-    await con.emitir('seleccionar', { sesionId: id });
-    setElegida(id);
-    const url = new URL(window.location.href);
-    url.searchParams.set('s', id);
-    window.history.replaceState(null, '', url);
+  async function elegir(id: string): Promise<boolean> {
+    if (!con || operacionPendiente.current || seleccionPendiente.current) return false;
+    seleccionPendiente.current = true;
+    setSeleccionando(true);
+    setError(null);
+    try {
+      const r = await con.emitir<{ ok: boolean; error?: string }>('seleccionar', { sesionId: id });
+      if (!r.ok) {
+        setError(r.error ?? 'No se pudo abrir la sesión');
+        return false;
+      }
+      setElegida(id);
+      const url = new URL(window.location.href);
+      url.searchParams.set('s', id);
+      window.history.replaceState(null, '', url);
+      return true;
+    } catch {
+      setError('No se pudo abrir la sesión. Revisa la conexión e inténtalo de nuevo.');
+      return false;
+    } finally {
+      seleccionPendiente.current = false;
+      setSeleccionando(false);
+    }
   }
 
   // Sin sesión elegida, se abre la más reciente.
   useEffect(() => {
-    if (con && estado.conectado && !elegida && sesiones.length > 0) void elegir(sesiones[0].id);
+    if (con && estado.conectado && !elegida && !operacionPendiente.current && sesiones.length > 0) void elegir(sesiones[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [con, estado.conectado, elegida, sesiones]);
 
@@ -56,14 +83,19 @@ export function Autores() {
   return (
     <div className="esc">
       <BarraAutores v={v} con={con} conectado={estado.conectado} />
+      <nav className="autores-atajos" aria-label="Secciones de autores">
+        <a href="#control-sesion">Controles</a><a href="#mesas-sesion">Mesas</a><a href="#materiales-sesion">Materiales y resultados</a>
+      </nav>
+      {error && <p className="error autores-aviso" role="alert">{error}</p>}
+      {seleccionando && <p className="nota autores-aviso" role="status">Abriendo la sesión…</p>}
       <div className="esc-main">
-        <div style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
-          {con && <Sesiones con={con} sesiones={sesiones} elegida={elegida} onElegir={elegir} />}
-          {v ? <Mesas v={v} /> : <p className="nota">Elige o crea una sesión.</p>}
+        <div className="esc-contenido">
+          {con && <Sesiones con={con} sesiones={sesiones} elegida={elegida} onElegir={elegir} onOcupado={marcarOcupado} bloqueado={ocupado || seleccionando || !estado.conectado} />}
+          {v ? <section id="mesas-sesion" aria-label="Avance de las mesas"><Mesas v={v} /></section> : <p className="nota">Elige o crea una sesión.</p>}
         </div>
-        {v && con && <Acciones v={v} con={con} k={k} />}
+        {v && con && <Acciones key={v.sesion.id} v={v} con={con} k={k} bloqueado={ocupado || seleccionando || !estado.conectado} onOcupado={marcarOcupado} />}
       </div>
-      {v && <Registro v={v} />}
+      {v && <Registro key={v.sesion.id} v={v} />}
     </div>
   );
 }
@@ -91,43 +123,58 @@ function BarraAutores({ v, con, conectado }: { v: Vista | null; con: Conexion | 
   );
 }
 
-function Sesiones({ con, sesiones, elegida, onElegir }: { con: Conexion; sesiones: ResumenSesion[]; elegida: string | null; onElegir: (id: string) => void }) {
+function Sesiones({ con, sesiones, elegida, onElegir, onOcupado, bloqueado }: { con: Conexion; sesiones: ResumenSesion[]; elegida: string | null; onElegir: (id: string) => Promise<boolean>; onOcupado: (valor: boolean) => void; bloqueado: boolean }) {
   const [tipo, setTipo] = useState('real');
   const [error, setError] = useState<string | null>(null);
+  const [creando, setCreando] = useState(false);
+  const pendiente = useRef(false);
   const id = useId();
   async function crear() {
+    if (bloqueado || pendiente.current) return;
+    pendiente.current = true;
+    onOcupado(true);
+    setCreando(true);
+    setError(null);
     const prueba = tipo !== 'real';
     const velocidad = prueba ? Number(tipo) : 1;
     try {
       const r = await con.emitir<{ ok: boolean; sesionId?: string; error?: string }>('crearSesion', { prueba, velocidad });
-      if (r.ok && r.sesionId) onElegir(r.sesionId);
+      onOcupado(false);
+      if (r.ok && r.sesionId) await onElegir(r.sesionId);
       else setError(r.error ?? 'No se pudo crear la sesión');
     } catch {
       setError('El servidor no respondió');
+    } finally {
+      pendiente.current = false;
+      setCreando(false);
+      onOcupado(false);
     }
   }
   return (
-    <div className="caja" style={{ background: 'var(--app-card)', borderRadius: 12, padding: 12, boxShadow: '0 0 0 1px var(--app-line)', display: 'grid', gap: 8 }}>
+    <details className="panel-desplegable sesiones-panel" open={!elegida}>
+      <summary>Sesiones <span className="nota">{sesiones.length} disponibles</span></summary>
+      <div className="caja">
       <div className="fila">
         <label className="etq" htmlFor={id}>Nueva sesión</label>
-        <select id={id} value={tipo} onChange={(e) => setTipo(e.target.value)} style={{ width: 'auto' }}>
+        <select id={id} value={tipo} disabled={bloqueado || creando} onChange={(e) => setTipo(e.target.value)} style={{ width: 'auto' }}>
           <option value="real">Real (la del aula)</option>
           <option value="1">De prueba ×1</option>
           <option value="10">De prueba ×10</option>
           <option value="60">De prueba ×60</option>
         </select>
-        <button type="button" className="btn" style={{ width: 'auto', flex: '0 0 auto', minHeight: 40, padding: '8px 14px' }} onClick={crear}>Crear</button>
-        {error && <span className="error">{error}</span>}
+        <button type="button" className="btn" disabled={bloqueado || creando} style={{ width: 'auto', flex: '0 0 auto', minHeight: 40, padding: '8px 14px' }} onClick={crear}>{creando ? 'Creando…' : 'Crear sesión'}</button>
+        {error && <span className="error" role="alert">{error}</span>}
       </div>
       <div className="sesiones">
         {sesiones.map((s) => (
-          <button key={s.id} type="button" className={`item${s.id === elegida ? ' elegido' : ''}`} onClick={() => onElegir(s.id)}>
+          <button key={s.id} type="button" disabled={bloqueado || creando} aria-pressed={s.id === elegida} className={`item${s.id === elegida ? ' elegido' : ''}`} onClick={() => void onElegir(s.id)}>
             <span className="id">{new Date(s.creadaEn).toLocaleString('es')} · {s.prueba ? `prueba ×${s.velocidad}` : 'real'} · {s.estado}</span>
             <span>Sesión <b className="mono">{s.codigo}</b> · {s.inscritos} inscritos</span>
           </button>
         ))}
       </div>
-    </div>
+      </div>
+    </details>
   );
 }
 
@@ -153,13 +200,15 @@ function TarjetaMesa({ m, e, lecturas }: { m: Mesa; e: EstadoDeSesion; lecturas:
   const ids = Object.keys(m.miembros);
   const sinConexion = ids.filter((id) => !e.participantes[id]?.conectado);
   const ronda = m.rondas[m.rondas.length - 1];
+  const tramo = e.tramoIndice === null ? null : e.contenido.agenda[e.tramoIndice]?.id;
+  const fase = tramo === 'medicion_previa' ? 'previa' : tramo === 'medicion_posterior' ? 'posterior' : null;
   return (
     <div className={`mcard${sinConexion.length > 0 ? ' alerta' : ''}`}>
       <h3>Mesa {m.numero} <span>{ids.length} personas{m.lineaBase.congeladaEn ? ' · congelada' : ''}</span></h3>
       <div className="quienes">
         {ids.map((id) => {
           const p = e.participantes[id];
-          const roles = m.miembros[id].map((r) => (r === 'SD2' ? 'Carmen' : etiquetaRol({}, r))).join('+');
+          const roles = m.miembros[id].map(nombreRol).join(' + ');
           return (
             <span key={id} className={p?.conectado ? '' : 'off'} title={`${p?.apodo ?? 'Sin apodo'} · ${id}${p?.bot ? ' · simulado' : ''}`}>
               {roles}{p?.conectado ? '' : ' sin conexión'}
@@ -170,8 +219,10 @@ function TarjetaMesa({ m, e, lecturas }: { m: Mesa; e: EstadoDeSesion; lecturas:
       <p className="cuentas">
         {m.necesidades.length} necesidades · {m.glosario.length} términos · {m.tarjetas.length} tarjetas · {m.divergencias.length} divergencias
       </p>
+      {fase && <p className="progreso">Medición {fase}: {ids.filter((id) => Boolean(e.medicion[id]?.[fase])).length} de {ids.length} respuestas enviadas</p>}
+      {e.estado === 'cerrada' && <p className="progreso">Encuesta final: {ids.filter((id) => Boolean(e.cuestionario[id])).length} de {ids.length} respuestas enviadas</p>}
       {ronda && <p className="cuentas">Ronda {ronda.numero}: {ronda.reveladaEn ? `revelada, ${Object.keys(ronda.resultados).length} de ${ronda.items.length} marcadas` : 'abierta'}</p>}
-      {m.reabiertos.length > 0 && <p className="cuentas">Reabierto: {m.reabiertos.join(', ')}</p>}
+      {m.reabiertos.length > 0 && <p className="cuentas">Reabierto: {m.reabiertos.map((t) => e.contenido.agenda.find((a) => a.id === t)?.nombre ?? t).join(', ')}</p>}
       {lecturas && (
         <div className="lect">
           {(['E1', 'E2', 'E3', 'E4', 'E5'] as const).map((x) => (
@@ -185,17 +236,33 @@ function TarjetaMesa({ m, e, lecturas }: { m: Mesa; e: EstadoDeSesion; lecturas:
   );
 }
 
-function Acciones({ v, con, k }: { v: Vista; con: Conexion; k: string }) {
+function Acciones({ v, con, k, bloqueado, onOcupado }: { v: Vista; con: Conexion; k: string; bloqueado: boolean; onOcupado: (valor: boolean) => void }) {
   const [mensaje, setMensaje] = useState<{ error?: string; listo?: string }>({});
+  const [enviando, setEnviando] = useState(false);
+  const pendiente = useRef(false);
   // Igual que en la pantalla de Leandro: tras mover el tramo, los botones esperan a que llegue el tramo nuevo.
   const [esperandoDesde, setEsperandoDesde] = useState<number | null | undefined>(undefined);
   const e = v.estado;
   const s = v.sesion;
   useEffect(() => setEsperandoDesde(undefined), [s.tramoIndice]);
   async function hacer(tipo: TipoComando, datos: unknown = {}, listo = 'Hecho'): Promise<boolean> {
-    const r = await con.enviar(tipo, datos);
-    setMensaje(r.ok ? { listo } : { error: r.error });
-    return r.ok;
+    if (bloqueado || pendiente.current) return false;
+    pendiente.current = true;
+    setEnviando(true);
+    onOcupado(true);
+    setMensaje({});
+    try {
+      const r = await con.enviar(tipo, datos);
+      setMensaje(r.ok ? { listo } : { error: r.error });
+      return r.ok;
+    } catch {
+      setMensaje({ error: 'No se pudo enviar el cambio. Inténtalo de nuevo.' });
+      return false;
+    } finally {
+      pendiente.current = false;
+      setEnviando(false);
+      onOcupado(false);
+    }
   }
   async function moverTramo(tipo: 'avanzarTramo' | 'retrocederTramo') {
     if (tipo === 'avanzarTramo' && s.tramoIndice === s.agenda.length - 1 && !window.confirm('¿Terminar la sesión? Después no se puede volver atrás.')) return;
@@ -203,14 +270,19 @@ function Acciones({ v, con, k }: { v: Vista; con: Conexion; k: string }) {
     if (!(await hacer(tipo, { desde: s.tramoIndice }))) setEsperandoDesde(undefined);
   }
   const moviendo = esperandoDesde !== undefined;
+  const deshabilitado = bloqueado || enviando || moviendo;
   const mesas = Object.values(e.mesas).map((m) => m.numero).sort((a, b) => a - b);
   const enlaceSesion = `${v.enlaceLeandro}&s=${encodeURIComponent(e.id)}`;
   return (
-    <aside className="lado">
+    <aside className="lado" id="control-sesion" aria-label="Controles de la sesión">
+      <h2>Sesión {s.codigo}</h2>
+      <p className="nota">{s.estado === 'cerrada' ? 'Sesión terminada' : s.nombreTramo}. {s.prueba ? `Prueba ×${s.velocidad}` : 'Sesión del aula'}.</p>
+      {enviando && <p className="nota" role="status">Enviando cambio…</p>}
       {mensaje.error && <p className="error" role="alert">{mensaje.error}</p>}
       {mensaje.listo && <p className="listo" role="status">{mensaje.listo}</p>}
+      <fieldset className="controles-grupo" disabled={deshabilitado}>
       <h3>Conducir</h3>
-      {!s.inscripcionCerrada && <button type="button" className="btn" onClick={() => hacer('cerrarInscripcion', {}, 'Inscripción cerrada')}>Cerrar inscripción y repartir roles</button>}
+      {!s.inscripcionCerrada && <><button type="button" className="btn" disabled={Object.keys(e.participantes).length < 5} onClick={() => hacer('cerrarInscripcion', {}, 'Inscripción cerrada y roles repartidos')}>Cerrar inscripción y repartir roles</button>{Object.keys(e.participantes).length < 5 && <p className="nota">Se necesitan al menos cinco participantes para formar una mesa.</p>}</>}
       {s.inscripcionCerrada && s.estado !== 'cerrada' && (
         <div className="fila">
           <button type="button" className="btn sec" disabled={!s.tramoIndice || moviendo} onClick={() => moverTramo('retrocederTramo')}>Retroceder</button>
@@ -221,35 +293,40 @@ function Acciones({ v, con, k }: { v: Vista; con: Conexion; k: string }) {
       )}
       {s.estado === 'en_curso' && (
         <div className="fila">
-          <button type="button" className="btn sec" onClick={() => hacer(s.pausada ? 'reanudar' : 'pausar')}>{s.pausada ? 'Reanudar' : 'Pausar'}</button>
+          <button type="button" className="btn sec" onClick={() => hacer(s.pausada ? 'reanudar' : 'pausar', {}, s.pausada ? 'Sesión reanudada' : 'Sesión pausada')}>{s.pausada ? 'Reanudar' : 'Pausar'}</button>
           {s.tramo === 'a51' && ([1, 2] as const).map((n) => (
-            <button key={n} type="button" className="btn sec" onClick={() => hacer('lanzarRonda', { numero: n }, `Ronda ${n} lanzada`)}>Lanzar ronda {n}</button>
+            <button key={n} type="button" className="btn sec" disabled={Object.values(e.mesas).some((m) => m.rondas.some((r) => r.numero === n))} onClick={() => hacer('lanzarRonda', { numero: n }, `Ronda ${n} lanzada`)}>Lanzar ronda {n}</button>
           ))}
         </div>
       )}
       <label className="casilla" style={{ fontWeight: 600 }}>
-        <input type="checkbox" checked={e.avanceAutomatico} onChange={(x) => hacer('cambiarAvance', { automatico: x.target.checked })} />
+        <input type="checkbox" checked={e.avanceAutomatico} disabled={s.estado === 'cerrada'} onChange={(x) => hacer('cambiarAvance', { automatico: x.target.checked })} />
         Avance automático al terminar cada tramo
       </label>
+      </fieldset>
 
       {mesas.length > 0 && (
-        <>
-          <h3>Arreglar</h3>
+        <details className="panel-desplegable">
+          <summary>Corregir una mesa</summary>
+          <fieldset className="controles-grupo" disabled={deshabilitado}>
           <MoverPersona e={e} hacer={hacer} />
           <PorMesa
             mesas={mesas} titulo="Reabrir un tramo en una mesa" opciones={TRAMOS_REABRIBLES} boton="Reabrir"
-            onHacer={(mesa, tramo) => hacer('reabrirPlantilla', { mesa, tramo }, `Reabierto ${tramo} en la mesa ${mesa}`)}
+            nombres={Object.fromEntries(s.agenda.map((t) => [t.id, t.nombre]))}
+            onHacer={(mesa, tramo) => hacer('reabrirPlantilla', { mesa, tramo }, `Reabierto ${s.agenda.find((t) => t.id === tramo)?.nombre ?? tramo} en la mesa ${mesa}`)}
           />
           <PorMesa
             mesas={mesas} titulo="Repetir una ronda en una mesa" opciones={['1', '2']} boton="Repetir"
             onHacer={(mesa, numero) => hacer('repetirRonda', { mesa, numero: Number(numero) }, `Ronda ${numero} repetida en la mesa ${mesa}`)}
           />
-        </>
+          </fieldset>
+        </details>
       )}
 
-      <h3>Datos y prueba</h3>
+      <section className="materiales" id="materiales-sesion" aria-label="Materiales y resultados">
+      <h3>Materiales y resultados</h3>
       <a className="btn sec" href={`/api/autores/exportar?s=${encodeURIComponent(e.id)}&k=${encodeURIComponent(k)}`} download>Exportar todo (JSON)</a>
-      {s.prueba && <Simular con={con} sesionId={e.id} />}
+      {s.prueba && <Simular con={con} sesionId={e.id} bloqueado={deshabilitado} onOcupado={onOcupado} />}
       <div className="caja">
         <span className="etq">Enlaces</span>
         <p className="nota">Estudiantes: <span className="mono">{v.enlaceBase}/?c={s.codigo}</span></p>
@@ -260,6 +337,7 @@ function Acciones({ v, con, k }: { v: Vista; con: Conexion; k: string }) {
           ))}
         </p>
       </div>
+      </section>
     </aside>
   );
 }
@@ -285,7 +363,7 @@ function MoverPersona({ e, hacer }: { e: EstadoDeSesion; hacer: (tipo: TipoComan
         <option value="">Elige a una persona</option>
         {personas.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.mesa === null ? (p.espectador ? 'Espectador' : 'Sin mesa') : `Mesa ${p.mesa}`} · {p.roles.join('+') || '—'} · {p.apodo ?? p.id.slice(0, 6)}{p.bot ? ' (sim.)' : ''}
+            {p.mesa === null ? (p.espectador ? 'Espectador' : 'Sin mesa') : `Mesa ${p.mesa}`} · {p.roles.map(nombreRol).join(' + ') || 'Sin rol'} · {p.apodo ?? p.id.slice(0, 6)}{p.bot ? ' (sim.)' : ''}
           </option>
         ))}
       </select>
@@ -299,7 +377,7 @@ function MoverPersona({ e, hacer }: { e: EstadoDeSesion; hacer: (tipo: TipoComan
             <div className="quienes" role="group" aria-label="Roles">
               {ROLES.map((r) => (
                 <label key={r} className="casilla" style={{ fontWeight: 600, fontSize: 13 }}>
-                  <input type="checkbox" checked={roles.includes(r)} onChange={() => alternar(r)} />{r === 'SD2' ? 'SD2 (Carmen)' : r}
+                  <input type="checkbox" checked={roles.includes(r)} onChange={() => alternar(r)} />{nombreRol(r)}
                 </label>
               ))}
             </div>
@@ -318,7 +396,7 @@ function MoverPersona({ e, hacer }: { e: EstadoDeSesion; hacer: (tipo: TipoComan
   );
 }
 
-function PorMesa(p: { mesas: number[]; titulo: string; opciones: string[]; boton: string; onHacer: (mesa: number, opcion: string) => void }) {
+function PorMesa(p: { mesas: number[]; titulo: string; opciones: string[]; nombres?: Record<string, string>; boton: string; onHacer: (mesa: number, opcion: string) => void }) {
   const [mesa, setMesa] = useState(String(p.mesas[0] ?? ''));
   const [opcion, setOpcion] = useState(p.opciones[0]);
   return (
@@ -329,7 +407,7 @@ function PorMesa(p: { mesas: number[]; titulo: string; opciones: string[]; boton
           {p.mesas.map((n) => <option key={n} value={n}>Mesa {n}</option>)}
         </select>
         <select value={opcion} onChange={(x) => setOpcion(x.target.value)} aria-label="Qué" style={{ width: 'auto' }}>
-          {p.opciones.map((o) => <option key={o} value={o}>{/^\d$/.test(o) ? `Ronda ${o}` : o}</option>)}
+          {p.opciones.map((o) => <option key={o} value={o}>{p.nombres?.[o] ?? (/^\d$/.test(o) ? `Ronda ${o}` : o)}</option>)}
         </select>
         <button type="button" className="btn sec" style={{ width: 'auto' }} onClick={() => p.onHacer(Number(mesa), opcion)}>{p.boton}</button>
       </div>
@@ -337,25 +415,40 @@ function PorMesa(p: { mesas: number[]; titulo: string; opciones: string[]; boton
   );
 }
 
-function Simular({ con, sesionId }: { con: Conexion; sesionId: string }) {
+function Simular({ con, sesionId, bloqueado, onOcupado }: { con: Conexion; sesionId: string; bloqueado: boolean; onOcupado: (valor: boolean) => void }) {
   const [n, setN] = useState(36);
   const [mensaje, setMensaje] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const pendiente = useRef(false);
   async function simular() {
+    if (bloqueado || pendiente.current) return;
+    pendiente.current = true;
+    setEnviando(true);
+    onOcupado(true);
+    setError(null);
+    setMensaje(null);
     try {
       const r = await con.emitir<{ ok: boolean; error?: string }>('simular', { sesionId, n });
-      setMensaje(r.ok ? `Se sumaron ${n} participantes simulados` : r.error ?? 'No se pudo simular');
+      if (r.ok) setMensaje(`Se sumaron ${n} participantes simulados`);
+      else setError(r.error ?? 'No se pudo simular');
     } catch {
-      setMensaje('El servidor no respondió');
+      setError('El servidor no respondió');
+    } finally {
+      pendiente.current = false;
+      setEnviando(false);
+      onOcupado(false);
     }
   }
   return (
     <div className="caja">
       <span className="etq">Participantes simulados</span>
       <div className="fila">
-        <input type="number" min={1} max={45} value={n} onChange={(x) => setN(Number(x.target.value))} aria-label="Cuántos" style={{ width: 80 }} />
-        <button type="button" className="btn" style={{ width: 'auto' }} onClick={simular}>Simular {n} participantes</button>
+        <input type="number" min={1} max={45} value={n} disabled={bloqueado || enviando} onChange={(x) => setN(Number(x.target.value))} aria-label="Cuántos participantes simulados" style={{ width: 80 }} />
+        <button type="button" className="btn" disabled={bloqueado || enviando || !Number.isInteger(n) || n < 1 || n > 45} style={{ width: 'auto' }} onClick={simular}>{enviando ? 'Simulando…' : `Simular ${n} participantes`}</button>
       </div>
-      {mensaje && <p className="nota">{mensaje}</p>}
+      {mensaje && <p className="listo" role="status">{mensaje}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </div>
   );
 }
@@ -363,21 +456,24 @@ function Simular({ con, sesionId }: { con: Conexion; sesionId: string }) {
 function Registro({ v }: { v: Vista }) {
   const e = v.estado;
   return (
-    <div className="registro" aria-label="Registro en vivo">
+    <details className="registro-panel panel-desplegable">
+      <summary>Registro en vivo <span className="nota">{v.registro.length} eventos</span></summary>
+      <div className="registro" aria-label="Registro en vivo">
       {[...v.registro].reverse().map((ev) => (
         <p key={ev.seq}>
           <span className="t">{new Date(ev.en).toLocaleTimeString('es')}</span>
-          {ev.mesa ? ` · Mesa ${ev.mesa}` : ''} · {quien(ev, e)} · {describir(ev)}
+          {ev.mesa ? ` · Mesa ${ev.mesa}` : ''} · {quien(ev, e)} · {textoRoles(describir(ev))}
         </p>
       ))}
-    </div>
+      </div>
+    </details>
   );
 }
 
 function quien(ev: Evento, e: EstadoDeSesion): string {
   if (ev.por.tipo === 'participante') {
     const p = e.participantes[ev.por.id];
-    return `${ev.por.roles.join('+') || 'participante'}${p?.bot ? ' (sim.)' : ''}`;
+    return `${ev.por.roles.map(nombreRol).join(' + ') || 'participante'}${p?.bot ? ' (sim.)' : ''}`;
   }
   return { leandro: 'Leandro', autores: 'Autores', sistema: 'Sistema' }[ev.por.tipo] ?? ev.por.tipo;
 }

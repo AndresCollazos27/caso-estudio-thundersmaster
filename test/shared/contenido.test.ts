@@ -26,6 +26,19 @@ describe('cargarContenido', () => {
     expect(c.caso.nombre).toBe('Tomatera');
     expect(c.agenda).toHaveLength(10);
     expect(c.rondas[0].items[0].tecnica).toBe('Paráfrasis cruzada');
+    expect(c.protocolo).toBeUndefined();
+    expect(c.cuestionario.utilidad).toBeUndefined();
+  });
+
+  it('acepta protocolo nuevo y rechaza IDs duplicados en utilidad', () => {
+    const nuevo = variante((d) => {
+      d.protocolo = { version: 2, cartaEnPrevia: true };
+      d.cuestionario.utilidad = { items: [{ id: 'problema', texto: 'Comprendí el problema' }], abierta: '¿Qué ayudó?' };
+    });
+    expect(cargarContenido(nuevo).protocolo).toEqual({ version: 2, cartaEnPrevia: true });
+    expect(errorDe(variante((d) => {
+      d.cuestionario.utilidad = { items: [{ id: 'problema', texto: 'A' }, { id: 'problema', texto: 'B' }], abierta: '?' };
+    })).ruta).toBe('cuestionario.utilidad.items');
   });
 
   it('rechaza una técnica que no está en TECNICA_I3', () => {

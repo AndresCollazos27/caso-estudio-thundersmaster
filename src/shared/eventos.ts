@@ -1,5 +1,5 @@
 import type { Contenido } from './contenido.js';
-import type { Divergencia, Evidencia, ItemRonda, Necesidad, PerfilApertura, Tarjeta, Termino } from './tipos.js';
+import type { Divergencia, Evidencia, ItemRonda, Necesidad, PerfilApertura, RespuestaUtilidad, Tarjeta, Termino } from './tipos.js';
 import type { Conformidad, ResultadoI3, RevisionI2A, Rol, SiNo, SiNoPend, TramoId } from './valores.js';
 
 export type Actor =
@@ -50,7 +50,7 @@ export interface DatosEvento {
   'traspaso.confirmado': { tarjetaId: string; coincide: SiNo; correccion: string };
   'accion.guardada': { indice?: number; accion: { origen: string; accion: string; responsable: string; fecha: string } };
   'destape.marcado': { divergencia: string; registrada: boolean };
-  'cuestionario.respondido': { participante: string; afirmaciones: number[]; tlx: number[]; abierta: string };
+  'cuestionario.respondido': { participante: string; afirmaciones: number[]; tlx: number[]; abierta: string; utilidad?: RespuestaUtilidad };
   'entrevista.nota': { pregunta: number; texto: string };
   'plantilla.reabierta': { tramo: TramoId };
   'sesion.cerrada': Record<string, never>;

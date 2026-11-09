@@ -61,7 +61,7 @@ export interface VistaJugador {
     comoLector: { mesa: number; tarjetas: Tarjeta[]; mias: Record<string, string> } | null;
     comoPO: Record<string, { reconstruccion: string; coincide?: 'Sí' | 'No'; correccion: string }> | null;
   };
-  medicion: { fase: 'previa' | 'posterior'; preguntas: Contenido['medicion']; respondida: boolean } | null;
+  medicion: { fase: 'previa' | 'posterior'; preguntas: Contenido['medicion']; respondida: boolean; permiteCarta: boolean } | null;
   destape: Contenido['destape'] | null;
   cuestionario: { preguntas: Contenido['cuestionario']; respondido: boolean } | null;
   fichaTecnica: Contenido['fichaTecnica'] | null;
@@ -76,6 +76,8 @@ export interface ResumenMesa {
   tarjetas: number;
   divergencias: number;
   congelada: boolean;
+  medicion?: { respondieron: number; total: number };
+  cuestionario?: { respondieron: number; total: number };
   // terminaEn: hora del servidor en que la ronda se revela sola, para la cuenta de 60 segundos proyectada.
   ronda: { numero: 1 | 2; respondieron: number; total: number; revelada: boolean; terminaEn: number } | null;
 }
@@ -91,6 +93,7 @@ export interface VistaLeandro {
   rondasLanzadas: number[];
   destape: Contenido['destape'] | null;
   entrevista: { preguntas: string[]; notas: EstadoDeSesion['entrevista'] } | null;
+  cuestionario?: { afirmaciones: number; utilidad: number; tlx: number; comentarios: number };
 }
 
 export interface VistaAutores {
@@ -112,7 +115,7 @@ function vistaSesion(e: EstadoDeSesion, ahora: number): VistaSesion {
 }
 
 function paraTodos(e: EstadoDeSesion): string {
-  if (e.tramoIndice === null) return inscripcionCerrada(e) ? 'Busca tu mesa y espera el inicio.' : 'Escanea el QR para unirte.';
+  if (e.tramoIndice === null) return inscripcionCerrada(e) ? 'Busca tu mesa. Espera a que el profesor Leandro inicie la actividad.' : 'Escanea el QR para unirte.';
   if (e.estado === 'cerrada') return 'Gracias por participar. Responde el cuestionario en tu celular.';
   return e.contenido.agenda[e.tramoIndice].paraTodos;
 }
@@ -198,15 +201,16 @@ export function vistaJugador(e: EstadoDeSesion, participanteId: string, ahora: n
 
   const fase: 'previa' | 'posterior' | null =
     tramo === 'medicion_previa' ? 'previa' : tramo === 'medicion_posterior' ? 'posterior' : null;
+  const permiteCarta = fase === 'previa' && e.contenido.protocolo?.cartaEnPrevia === true;
   const medicion = fase
-    ? { fase, preguntas: e.contenido.medicion, respondida: Boolean(e.medicion[p.id]?.[fase]) }
+    ? { fase, preguntas: e.contenido.medicion, respondida: Boolean(e.medicion[p.id]?.[fase]), permiteCarta }
     : null;
 
   return {
     ...vacio,
     ahora: { paraTodos: paraTodos(e), paraMi: instruccionesDe(e, roles) },
-    carta: cartaDe ? e.contenido.cartas[cartaDe] : null,
-    hojas,
+    carta: cartaDe && (!fase || permiteCarta) ? e.contenido.cartas[cartaDe] : null,
+    hojas: !fase || permiteCarta ? hojas : [],
     contexto: {
       canvas: e.contenido.plantillas.canvas, mapa: e.contenido.plantillas.mapa,
       chequeoSuficiencia: e.contenido.plantillas.chequeoSuficiencia, declaracion: e.contenido.plantillas.declaracion,
@@ -217,17 +221,21 @@ export function vistaJugador(e: EstadoDeSesion, participanteId: string, ahora: n
     medicion,
     destape: tramo === 'destape' ? e.contenido.destape : null,
     cuestionario: e.estado === 'cerrada' ? { preguntas: e.contenido.cuestionario, respondido: Boolean(e.cuestionario[p.id]) } : null,
-    fichaTecnica: m.fichaPedidas.some((f) => f.por === p.id) ? e.contenido.fichaTecnica : null,
+    fichaTecnica: !fase && m.fichaPedidas.some((f) => f.por === p.id) ? e.contenido.fichaTecnica : null,
   };
 }
 
 function resumenMesa(e: EstadoDeSesion, m: Mesa): ResumenMesa {
   const ids = Object.keys(m.miembros);
   const ultima = m.rondas[m.rondas.length - 1];
+  const tramo = tramoActual(e);
+  const fase = tramo === 'medicion_previa' ? 'previa' : tramo === 'medicion_posterior' ? 'posterior' : null;
   return {
     numero: m.numero, personas: ids.length, conectados: ids.filter((id) => e.participantes[id]?.conectado).length,
     necesidades: m.necesidades.length, terminos: m.glosario.length, tarjetas: m.tarjetas.length, divergencias: m.divergencias.length,
     congelada: m.lineaBase.congeladaEn !== undefined,
+    ...(fase ? { medicion: { respondieron: ids.filter((id) => Boolean(e.medicion[id]?.[fase])).length, total: ids.length } } : {}),
+    ...(e.estado === 'cerrada' ? { cuestionario: { respondieron: ids.filter((id) => Boolean(e.cuestionario[id])).length, total: ids.length } } : {}),
     ronda: ultima
       ? {
           numero: ultima.numero, total: ids.length, revelada: ultima.reveladaEn !== undefined,
@@ -258,6 +266,12 @@ export function vistaLeandro(e: EstadoDeSesion, ahora: number, publicUrl: string
     conectados: participantes.filter((p) => p.conectado).length, inscritos: participantes.length, mesas, rondasLanzadas,
     destape: tramoActual(e) === 'destape' || e.estado === 'cerrada' ? e.contenido.destape : null,
     entrevista: e.estado === 'cerrada' ? { preguntas: e.contenido.entrevista, notas: e.entrevista } : null,
+    cuestionario: {
+      afirmaciones: e.contenido.cuestionario.afirmaciones.length,
+      utilidad: e.contenido.cuestionario.utilidad?.items.length ?? 0,
+      tlx: e.contenido.cuestionario.tlx.length,
+      comentarios: e.contenido.cuestionario.utilidad ? 2 : 1,
+    },
   };
 }
 

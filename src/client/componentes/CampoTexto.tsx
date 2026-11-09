@@ -27,12 +27,13 @@ export function CampoTexto(p: {
   }
   const vacio = !texto.trim() && !p.vacioPermitido;
   return (
-    <div className="campo">
+    <fieldset className="campo formulario-bloqueable" disabled={envio.enviando}>
       <AreaTexto etiqueta={p.etiqueta} valor={texto} onCambio={cambiar} corto={p.corto} ayuda={p.ayuda} />
       <button type="button" className="btn" disabled={envio.enviando || vacio || excedeTexto(texto)} onClick={enviar}>
         {envio.enviando ? 'Enviando…' : p.boton}
       </button>
+      {texto !== (p.inicial ?? '') && !envio.listo && <p className="nota borrador">Borrador guardado en este dispositivo; pulsa «{p.boton}» para enviarlo.</p>}
       <Mensajes error={envio.error} listo={envio.listo} />
-    </div>
+    </fieldset>
   );
 }

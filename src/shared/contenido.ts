@@ -27,6 +27,8 @@ const tramo = obj({
 
 const esquemaBase = obj({
   caso: obj({ nombre: texto, empresa: texto, equipo: texto }),
+  // La ausencia identifica las sesiones originales; nunca se actualiza su protocolo al reabrirlas.
+  protocolo: obj({ version: z.literal(2), cartaEnPrevia: z.boolean() }).optional(),
   fichaTecnica: obj({ titulo: texto, url: z.string().url() }),
   consentimiento: texto,
   roles: z.record(rol, obj({ nombre: texto, etiqueta: texto, color: z.string().regex(/^#[0-9A-Fa-f]{6}$/) })),
@@ -61,6 +63,10 @@ const esquemaBase = obj({
     afirmaciones: z.array(texto).length(5),
     tlx: z.array(obj({ id: texto, nombre: texto, descripcion: texto, bajo: texto, alto: texto })).length(6),
     abierta: texto,
+    utilidad: obj({
+      items: z.array(obj({ id: z.string().regex(/^[a-z][a-z0-9_]*$/), texto })).min(1),
+      abierta: texto,
+    }).optional(),
   }),
   entrevista: z.array(texto).length(3),
   destape: z.array(obj({ id: z.string().regex(/^T[1-8]$/), titulo: texto, detalle: texto })).length(8),
@@ -85,6 +91,10 @@ const esquemaBase = obj({
 });
 
 export const esquemaContenido = esquemaBase.superRefine((c, ctx) => {
+  const utilidad = c.cuestionario.utilidad?.items ?? [];
+  if (new Set(utilidad.map((item) => item.id)).size !== utilidad.length) {
+    ctx.addIssue({ code: 'custom', path: ['cuestionario', 'utilidad', 'items'], message: 'Los identificadores de utilidad no pueden repetirse' });
+  }
   const ids = c.agenda.map((t) => t.id);
   if (ids.join() !== TRAMOS.join()) {
     ctx.addIssue({ code: 'custom', path: ['agenda'], message: `La agenda debe tener los tramos en este orden: ${TRAMOS.join(', ')}` });

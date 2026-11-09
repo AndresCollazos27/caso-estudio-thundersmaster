@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { usarMesa } from '../contexto.js';
 import { Mensajes, excedeTexto, usarEnvio, usarFormulario } from './comunes.js';
+import { Carta } from './Carta.js';
 
 // Las cuatro preguntas de la medición, una por pantalla. Se envían juntas al final.
 export function Medicion() {
@@ -11,7 +12,7 @@ export function Medicion() {
   const envio = usarEnvio();
   const id = useId();
   if (!med) return null;
-  if (med.respondida) return <p className="listo">Listo, ya respondiste. Gracias.</p>;
+  if (med.respondida) return <p className="listo" role="status">Respuestas enviadas. Gracias.</p>;
   const respuestas = f.datos.respuestas;
   const p = med.preguntas[i];
   const poner = (t: string) => f.poner('respuestas', respuestas.map((x, j) => (j === i ? t : x)));
@@ -20,11 +21,14 @@ export function Medicion() {
     if (await envio.correr(() => enviar('responderMedicion', { fase: med!.fase, respuestas: respuestas.map((x) => x.trim()) }), 'Enviado')) f.limpiar();
   }
   return (
-    <div className="papel">
+    <fieldset className="papel formulario-bloqueable" disabled={envio.enviando}>
+      {med.permiteCarta && <details className="consulta-carta"><summary>Consultar {v.carta ? 'mi carta' : 'mi hoja'}</summary><Carta soloLectura /></details>}
       <p className="progreso">Pregunta {i + 1} de {med.preguntas.length}</p>
+      <progress className="avance-formulario" max={med.preguntas.length} value={i + 1} aria-label="Avance de la medición" />
       <label className="etq" htmlFor={id} style={{ fontSize: 17, color: 'var(--app-ink)' }}>{p.pregunta}</label>
       <input id={id} type="text" inputMode={p.tipo === 'numero' ? 'decimal' : 'text'} value={respuestas[i]} onChange={(e) => poner(e.target.value)} autoComplete="off" />
       <button type="button" className="enlace" style={{ justifySelf: 'start' }} onClick={() => poner('No sé')}>No lo sé</button>
+      {f.hayCambios && <p className="nota borrador">Borrador guardado en este dispositivo. Se enviará al terminar las cuatro preguntas.</p>}
       <div className="fila">
         {i > 0 && <button type="button" className="btn sec" onClick={() => setI(i - 1)}>Anterior</button>}
         {!ultima && <button type="button" className="btn" disabled={!respuestas[i].trim()} onClick={() => setI(i + 1)}>Siguiente</button>}
@@ -35,6 +39,6 @@ export function Medicion() {
         )}
       </div>
       <Mensajes error={envio.error} />
-    </div>
+    </fieldset>
   );
 }
